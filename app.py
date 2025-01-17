@@ -9,8 +9,30 @@ import uvicorn, jinja2
 from datetime import datetime
 import time
 
+
+#init db and push one admin to user db
 db_controller = DBController()
 db_controller.init_db(db_path=global_config.PATH_DB, init=False)
+empty_user_db = db_controller.get_max_user_idx() == -1
+if empty_user_db:
+    admin_user_info = {
+        'user_idx':0,
+        'user_id':'admin',
+        'user_password':'admin',
+        'user_find_password_questsion':'-',
+        'user_find_password_answer':'-',
+        'user_email':'aer0700@naver.com'
+    }
+    db_controller.push_user(user_idx=admin_user_info['user_idx'],
+                    user_id=admin_user_info['user_id'],
+                    user_password=admin_user_info['user_password'],
+                    user_find_password_question=admin_user_info['user_find_password_questsion'],
+                    user_find_password_answer=admin_user_info['user_find_password_answer'],
+                    user_email=admin_user_info['user_email'],
+                    created_time=datetime.now(),
+                    previlage='admin')    
+
+
 app = FastAPI()
 
 @app.middleware('http')

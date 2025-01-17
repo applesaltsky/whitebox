@@ -204,28 +204,7 @@ class DBController:
             cursor.execute(self.SQL_INIT_USER_TABLE)
 
             conn.commit()
-
-        empty_user_db = self.get_max_user_idx() == -1
-        if empty_user_db:
-            admin_user_info = {
-                'user_idx':0,
-                'user_id':'admin',
-                'user_password':'admin',
-                'user_find_password_questsion':'-',
-                'user_find_password_answer':'-',
-                'user_email':'aer0700@naver.com'
-            }
-            self.push_user(user_idx=admin_user_info['user_idx'],
-                            user_id=admin_user_info['user_id'],
-                            user_password=admin_user_info['user_password'],
-                            user_find_password_question=admin_user_info['user_find_password_questsion'],
-                            user_find_password_answer=admin_user_info['user_find_password_answer'],
-                            user_email=admin_user_info['user_email'],
-                            created_time=datetime.now(),
-                            previlage='admin')
-
-        
-
+    
     def push_content(self,
                     content_idx:int, 
                     user_idx:int,
