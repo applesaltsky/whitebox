@@ -46,7 +46,7 @@ def add_logger(request:Request, call_next):
     response = call_next(request)
     process_time = time.time() - start_time
     memory_usage_mb = psutil.Process().memory_info().rss / (1024 * 1024)
-    print(datetime.now(), ' url : ', request.url, ' method :', request.method, f' proc_time : {process_time:.2f} sec', f' memory usage : {memory_usage_mb:.2f} MB')
+    print(datetime.now(), ' url : ', request.url, ' method :', request.method, f' proc_time : {process_time:.4f} sec', f' memory usage : {memory_usage_mb:.2f} MB')
     return response
 
 @app.middleware('http')
@@ -54,6 +54,59 @@ def del_old_session(request:Request, call_next):
     session_controller.del_old_session(max_age=global_config.max_session_age)
     response = call_next(request)
     return response
+
+
+@app.middleware('http')
+def confirm_valid_client_session(request:Request, call_next):
+    session_id = request.cookies.get('session_id')
+    login_client = session_id is not None
+    invalid_session = session_controller.get_session(session_id) is None
+    if login_client and invalid_session:
+        print(f'invalid client session : {session_id}')
+        response = RedirectResponse(url = '/')
+        response.set_cookie(key='session_id',
+                            value='-',
+                            max_age=0
+                            )
+        return response
+    
+    response = call_next(request)
+    return response
+
+
+@app.middleware('http')
+def confirm_admin_client_session(request:Request, call_next):
+    url_path = request.url.path
+    admin_path = r'/admin/' in url_path
+    if not admin_path:
+        response = call_next(request)
+        return response
+
+    session_id = request.cookies.get('session_id')
+    login_client = session_id is not None
+    if not login_client:
+        response = RedirectResponse(url = '/')
+        return response
+
+    user_info = session_controller.get_session(session_id)
+    invalid_session = user_info is None
+    if invalid_session:
+        response = RedirectResponse(url = '/')
+        response.set_cookie(key='session_id',
+                            value='-',
+                            max_age=0
+                            )
+        return response
+    
+    user_previlage = user_info['previlage']
+    admin_previlage = user_previlage == 'admin'
+    if not admin_previlage:
+        response = RedirectResponse(url = '/')
+        return response
+        
+    response = call_next(request)
+    return response
+
 
 @app.get('/')
 def home_handler():
@@ -74,6 +127,11 @@ def home_handler():
     <div><a href='/'> go to idx </a></div>
     <div><a href='/content'> write content </a></div>
     <div><a href='/user'> create account </a></div>
+    <form action="/login" method="get">
+         <div>
+            <button type="submit">login</button>
+        </div>
+    </form>
 </body>
 </html>
     """
@@ -110,6 +168,11 @@ def submit_content_form_handler():
     </form>
     <div><a href='/'> go to idx </a></div>
     <div><a href='/user'> create account </a></div>
+    <form action="/login" method="get">
+         <div>
+            <button type="submit">login</button>
+        </div>
+    </form>
 </body>
 </html>"""
     status_code = 200
@@ -148,6 +211,16 @@ def submit_content_form_handler(content_idx:int):
     <div><a href='/'> go to idx </a></div>
     <div><a href='/content'> write content </a></div>
     <div><a href='/user'> create account </a></div>
+    <form action="/login" method="get">
+         <div>
+            <button type="submit">login</button>
+        </div>
+    </form>
+    <form action="/logout" method="post">
+         <div>
+            <button type="submit">logout</button>
+        </div>
+    </form>
 </body>
 </html>"""
     body = jinja2.Template(body).render(**content)
@@ -322,7 +395,7 @@ def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=
 @app.post('/logout')
 def user_logout_requests_handler(session_id:str = Cookie(default='-')):
     status_code = 303  #see other
-    response =  RedirectResponse(url='/login', status_code=status_code)
+    response =  RedirectResponse(url='/', status_code=status_code)
     response.set_cookie(key='session_id',
                         value="-",
                         max_age=0)
