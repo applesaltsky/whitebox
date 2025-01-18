@@ -48,7 +48,7 @@ def add_logger(request:Request, call_next):
     response = call_next(request)
     process_time = time.time() - start_time
     memory_usage_mb = psutil.Process().memory_info().rss / (1024 * 1024)
-    print(datetime.now(), ' url : ', request.url, ' method :', request.method, f' proc_time : {process_time:.4f} sec', f' memory usage : {memory_usage_mb:.2f} MB')
+    print(datetime.now(), ' url : ', request.url, ' method :', request.method, f' proc_time : {process_time:.4f} sec', f' memory_usage : {memory_usage_mb:.2f} MB')
     return response
 
 @app.middleware('http')
@@ -155,7 +155,7 @@ def home_handler(session_id:str = Cookie(default='-')):
             margin-left : 5px;
         }
 
-        #title {
+        #title_view {
             text-align : center;
         }
 
@@ -218,9 +218,14 @@ def home_handler(session_id:str = Cookie(default='-')):
                         </div>
                     </form>
                 {% endif %}
+                    <form action="/" method="get">
+                        <div>
+                            <button type="submit">return to home</button>
+                        </div>
+                    </form>
             </div>
         </div>
-        <div id='title'>   
+        <div id='title_view'>   
             <h1> content list </h1>
         </div>
         <div id='view'>
@@ -255,7 +260,7 @@ def home_handler(session_id:str = Cookie(default='-')):
     content_list = db_controller.get_content_list()
     body = jinja2.Template(body).render(**{"content_list":content_list,"user_info":user_info})
     status_code = 200
-    headers = {'Content-Type':'text/html'}
+    headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 
@@ -268,43 +273,141 @@ def submit_content_form_handler(session_id:str = Cookie(default='-')):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간단한 양식</title>
+    <style>
+        * {
+            margin: 0;               /* 모든 요소의 기본 마진 제거 */
+            padding: 0;              /* 모든 요소의 기본 패딩 제거 */
+            box-sizing: border-box;  /* 박스 모델을 border-box로 설정 */
+            font-family: Arial, sans-serif; /* 기본 글꼴 설정 */
+        }
+
+        body {
+            display:flex;
+            justify-content:center;
+        }
+        
+        #mainframe {
+            margin-top : 30px;
+            text-align : left;
+            width : 800px;
+        }
+
+        #top_line {
+            display: flex; 
+            justify-content: space-between;
+            text-align:right;
+        }
+
+        #top_line #top_line_content {
+            width : 50%;
+            display : flex;
+            justify-content: flex-end;
+        }
+
+        #top_line #top_line_content div {
+            margin-left : 5px;
+        }
+
+        #title_view {
+            text-align : center;
+        }
+
+        #view {
+            margin-top:30px;
+        }
+
+        #user_input .user_input_form {
+            display:flex;
+            margin-top:5px;
+        }
+
+        #user_input input {
+            width : 100%;
+        }
+
+        #user_input .user_input_form .user_input_form_category{
+            width : 20%;
+        }
+
+        #user_input .user_input_form .user_input_form_input{
+            width : 80%;
+        }
+
+        #user_input .user_input_content {
+            margin-top:10px;
+        }
+
+        #user_input textarea{
+            width : 100%;
+        }
+
+        #user_input .user_input_submit {
+            margin-top : 10px;
+        }
+
+        #user_input .user_input_submit button {
+            width : 100%;
+            height : 20px;
+        }
+
+    </style>
 </head>
 <body>
-    {% if user_info %}
-        <h1> hello, {{user_info['user_id']}}! </h1>
-    {% else %}
-        <form action="/login" method="get">
-            <div>
-                <button type="submit">login</button>
+    <div id='mainframe'>
+        <div id='top_line'>
+            <div id='top_line_empty'>
+                <h5> hello, {{user_info['user_id']}}! </h5>
             </div>
-        </form>
-        <form action="/user" method="get">
-            <div>
-                <button type="submit">create account</button>
+            <div id='top_line_content'>
+                <form action="/logout" method="post">
+                    <div>
+                        <button type="submit">logout</button>
+                    </div>
+                </form>
+                {% if user_info['previlage'] == 'admin' %}
+                <form action="/admin/user" method="get">
+                    <div>
+                        <button type="submit">view user table</button>
+                    </div>
+                </form>
+                {% endif %}
+                <form action="/" method="get">
+                    <div>
+                        <button type="submit">return to home</button>
+                    </div>
+                </form>
             </div>
-        </form>
-    {% endif %}
-    <form action="/content" method="post">
-        <div>
-            <label for="title">제목:</label>
-            <input type="text" id="title" name="title" required>
         </div>
-        <div>
-            <label for="content">내용:</label><br>
-            <textarea id="content" name="content" rows="4" cols="50" required></textarea>
+        <div id= 'title_view'>
+            <h1> write content </h1>
         </div>
-        <div>
-            <button type="submit">전송</button>
+        <div id='view'>
+            <div id='user_input'>
+                <form action="/content" method="post">
+                    <div class='user_input_form'> 
+                        <div class='user_input_form_category'>
+                            TITLE
+                        </div>
+                        <div class='user_input_form_input'>
+                            <input type="text" id="title" name="title" required></input>
+                        </div> 
+                    </div>
+                    <div class='user_input_content'>
+                        <textarea id="content" name="content" rows="20" required></textarea>
+                    </div>
+                    <div class='user_input_submit'>
+                        <button type="submit">전송</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </form>
-    <div><a href='/'> go to idx </a></div>
-   
+    </div>
 </body>
 </html>"""
     user_info = session_controller.get_session(session_id)
     body = jinja2.Template(body).render(**{"user_info":user_info})
     status_code = 200
-    headers = {'Content-Type':'text/html'}
+    headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/content')
@@ -347,7 +450,23 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
             width : 800px;
         }
 
-        #title {
+        #top_line {
+            display: flex; 
+            justify-content: space-between;
+            text-align:right;
+        }
+
+        #top_line #top_line_content {
+            width : 30%;
+            display : flex;
+            justify-content: flex-end;
+        }
+
+        #top_line #top_line_content div {
+            margin-left : 5px;
+        }
+
+        #title_view {
             text-align : center;
         }
 
@@ -370,39 +489,64 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
         #content {
             text-align: left;       /* 텍스트 중앙 정렬 */
             border: 1px solid black;  /* 시각적 구분을 위한 테두리 */
-            padding: 20px;
+            padding : 20px;
+            margin-top:10px;
         }
 
     </style>
 </head>
 <body>
     <div id='mainframe'>
-        {% if user_info %}
-            <div><a href='/content'> write content </a></div>
-            <form action="/logout" method="post">
-                <div>
-                    <button type="submit">logout</button>
-                </div>
-            </form>
-        {% else %}
-            <form action="/login" method="get">
-                <div>
-                    <button type="submit">login</button>
-                </div>
-            </form>
-            <form action="/user" method="get">
-                <div>
-                    <button type="submit">create account</button>
-                </div>
-            </form>
-        {% endif %}
-        <h1 id='title'> {{content['title']}} </h1>
+        <div id='top_line'>
+            <div id='top_line_empty'>
+                {% if user_info %}
+                    <h5> hello, {{user_info['user_id']}}! </h5>
+                {% endif %}
+            </div>
+            <div id='top_line_content'>
+                {% if user_info %}
+                    <form action="/content" method="get">
+                        <div>
+                            <button type="submit">write content</button>
+                        </div>
+                    </form>
+                    <form action="/logout" method="post">
+                        <div>
+                            <button type="submit">logout</button>
+                        </div>
+                    </form>
+                    {% if user_info['previlage'] == 'admin' %}
+                    <form action="/admin/user" method="get">
+                        <div>
+                            <button type="submit">view user table</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                {% else %}
+                    <form action="/login" method="get">
+                        <div>
+                            <button type="submit">login</button>
+                        </div>
+                    </form>
+                    <form action="/user" method="get">
+                        <div>
+                            <button type="submit">create account</button>
+                        </div>
+                    </form>
+                {% endif %}
+                    <form action="/" method="get">
+                        <div>
+                            <button type="submit">return to home</button>
+                        </div>
+                    </form>
+            </div>
+        </div>
+        <h1 id='title_view'> {{content['title']}} </h1>
         <div id='view'>
             <div id='content_info'>  
                 <span> user_id : {{content['user_idx']}} </span> 
                 <span> created_time : {{content['created_time']}} </span> 
             </div>
-            <div id='content_support'><a href='/'> go to idx </a></div>
             <div id='content'>    
                 {{content['content']}}
             </div>
@@ -415,7 +559,7 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     user_info = session_controller.get_session(session_id)
     body = jinja2.Template(body).render(**{'content':content,'user_info':user_info})
     status_code = 200
-    headers = {'Content-Type':'text/html'}
+    headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.get('/user')
@@ -427,46 +571,153 @@ def submit_user_form_handler(error_message:str = Query(default=' ')):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간단한 양식</title>
+    <style>
+        * {
+            margin: 0;               /* 모든 요소의 기본 마진 제거 */
+            padding: 0;              /* 모든 요소의 기본 패딩 제거 */
+            box-sizing: border-box;  /* 박스 모델을 border-box로 설정 */
+            font-family: Arial, sans-serif; /* 기본 글꼴 설정 */
+        }
+
+        body {
+            display:flex;
+            justify-content:center;
+        }
+        
+        #mainframe {
+            margin-top : 30px;
+            text-align : left;
+            width : 500px;
+        }
+
+        #top_line {
+            display: flex; 
+            justify-content: space-between;
+            text-align:right;
+        }
+
+        #top_line #top_line_content {
+            width : 30%;
+            display : flex;
+            justify-content: flex-end;
+        }
+
+        #top_line #top_line_content div {
+            margin-left : 5px;
+        }
+
+        #title_view {
+            text-align : center;
+        }
+
+        #view {
+            margin-top : 30px;
+        }
+
+        #user_input .user_input_form {
+            display:flex;
+            margin-top:5px;
+        }
+
+        #user_input input {
+            width : 100%;
+        }
+
+        #user_input .user_input_form div{
+            width : 50%;
+        }
+
+        .user_input_submit {
+            margin-top : 10px;
+        }
+
+        .user_input_submit button {
+            width : 100%;
+            height : 20px;
+        }
+
+    </style>
 </head>
 <body>
-    <h1>created user page</h1>
-    <div> {{error_message}} </div>
-    <form action="/user" method="post">
-        <div>
-            <label for="user_id">id : </label>
-            <input type="text" id="user_id" name="user_id" required>
+    <div id='mainframe'>  
+        <div id='top_line'>
+            <div id='top_line_empty'>
+            </div>
+            <div id='top_line_content'>
+                <form action="/" method="get">
+                    <div>
+                        <button type="submit">return to home</button>
+                    </div>
+                </form>
+            </div>
+        </div>  
+        <div id='title_view'> 
+            <h1>create account</h1>
         </div>
-        <div>
-            <label for="user_password">password : </label>
-            <input type="password" id="user_password" name="user_password" required></input>
+        <div id='view'>
+            <div> {{error_message}} </div>
+            <div id='user_input'>
+                <form action="/user" method="post">
+                    <div class='user_input_form'>
+                        <div class='user_input_form_category'>
+                            ID
+                        </div>
+                        <div class='user_input_form_input'>
+                            <input type="text" id="user_id" name="user_id" required>
+                        </div>
+                    </div>
+                    <div class='user_input_form'>
+                        <div class='user_input_form_category'>
+                            PASSWORD
+                        </div>
+                        <div class='user_input_form_input'>
+                            <input type="password" id="user_password" name="user_password" required></input>
+                        </div>
+                    </div>
+                    <div class='user_input_form'>
+                        <div class='user_input_form_category'>
+                            PASSWORD_CONFIRM
+                        </div>
+                        <div class='user_input_form_input'>
+                            <input type="password" id="user_password_confirm" name="user_password_confirm" required></input>
+                        </div>
+                    </div>
+                    <div class='user_input_form'>
+                        <div class='user_input_form_category'>
+                            user_email
+                        </div>
+                        <div class='user_input_form_input'>
+                            <input type="email" id="user_email" name="user_email" required></input>
+                        </div>
+                    </div>
+                    <div class='user_input_form'>
+                        <div class='user_input_form_category'>
+                            user_find_password_question
+                        </div>
+                        <div class='user_input_form_input'> 
+                            <input type="text" id="user_find_password_question" name="user_find_password_question" value="내가 가장 좋아하는 과자는?" required></input>
+                        </div>
+                    </div>
+                    <div class='user_input_form'>
+                        <div class='user_input_form_category'>
+                            user_find_password_answer
+                        </div>
+                        <div class='user_input_form_input'> 
+                            <input type="text" id="user_find_password_answer" name="user_find_password_answer" value="호두과자" required></input>
+                        </div>
+                    </div>
+                    <div class='user_input_submit'>
+                        <button type="submit">전송</button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div>
-            <label for="user_password_confirm">password_confirm : </label>
-            <input type="password" id="user_password_confirm" name="user_password_confirm" required></input>
-        </div>
-        <div>
-            <label for="user_email">user_email : </label>
-            <input type="email" id="user_email" name="user_email" required></input>
-        </div>
-        <div>
-            <label for="user_find_password_question">user_find_password_question : </label>
-            <input type="text" id="user_find_password_question" name="user_find_password_question" value="내가 가장 좋아하는 과자는?" required></input>
-        </div>
-        <div>
-            <label for="user_find_password_answer">user_find_password_answer : </label>
-            <input type="text" id="user_find_password_answer" name="user_find_password_answer" value="호두과자" required></input>
-        </div>
-        <div>
-            <button type="submit">전송</button>
-        </div>
-    </form>
-    <div><a href='/'> go to idx </a></div>
-    <div><a href='/user'> create account </a></div>
+    </div>
 </body>
 </html>"""
     body = jinja2.Template(body).render(**{'error_message':error_message.replace('_',' ')})
     status_code = 200
-    headers = {'Content-Type':'text/html'}
+    headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/user')
@@ -549,10 +800,26 @@ def serve_user_login_form(error_message:str = Query(default=' ')):
         #mainframe {
             margin-top : 30px;
             text-align : left;
-            width : 300px;
+            width : 350px;
         }
 
-        #title {
+        #top_line {
+            display: flex; 
+            justify-content: space-between;
+            text-align:right;
+        }
+
+        #top_line #top_line_content {
+            width : 50%;
+            display : flex;
+            justify-content: flex-end;
+        }
+
+        #top_line #top_line_content div {
+            margin-left : 5px;
+        }
+
+        #title_view {
             text-align : center;
         }
 
@@ -565,15 +832,39 @@ def serve_user_login_form(error_message:str = Query(default=' ')):
             margin-top:5px;
         }
 
+        #user_input input {
+            width : 100%;
+        }
+
         #user_input .user_input_form div{
             width : 50%;
+        }
+
+        .user_input_submit {
+            margin-top : 10px;
+        }
+
+        .user_input_submit button {
+            width : 100%;
+            height : 20px;
         }
 
     </style>
 </head>
 <body>
     <div id='mainframe'>
-        <div id= 'title'>
+        <div id='top_line'>
+            <div id='top_line_empty'>
+            </div>
+            <div id='top_line_content'>
+                <form action="/" method="get">
+                    <div>
+                        <button type="submit">return to home</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id= 'title_view'>
             <h1> login page </h1>
         </div>
         <div id ='view'>
@@ -597,11 +888,10 @@ def serve_user_login_form(error_message:str = Query(default=' ')):
                         </div> 
                     </div>
                     <div class='user_input_submit'>
-                        <button type="submit">전송</button>
+                        <button type="submit">LOGIN</button>
                     </div>
                 </form>
             </div>
-            <div><a href='/'> go to idx </a></div>
         </div> 
     </div>
 </body>
@@ -609,7 +899,7 @@ def serve_user_login_form(error_message:str = Query(default=' ')):
     """
     body = jinja2.Template(body).render(**{'error_message':error_message.replace("_"," ")})
     status_code = 200
-    headers = {'Content-Type':'text/html'}
+    headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/login')
@@ -713,7 +1003,7 @@ def serve_user_list_page(session_id:str = Cookie(default='-')):
     """
     body = jinja2.Template(body).render(**{'user_list':user_list})
     status_code = 200
-    headers = {'Content-Type':'text/html'}
+    headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 
