@@ -54,7 +54,7 @@ def add_logger(request:Request, call_next):
 
 @app.middleware('http')
 def del_old_session(request:Request, call_next):
-    print(session_controller.session_db)
+    #print(session_controller.session_db)
     session_controller.del_old_session(max_age=global_config.max_session_age)
     response = call_next(request)
     return response
@@ -165,6 +165,7 @@ def submit_content_request_handler(title:str = Form(default='test'),
 
 @app.get('/content/{content_idx}')
 def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
+    db_controller.add_one_content_view_count(content_idx)
     template = 'content__content_idx.html'
     with open(Path(global_config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
@@ -286,6 +287,15 @@ def user_logout_requests_handler(session_id:str = Cookie(default='-')):
                         max_age=0)
     session_controller.del_session(session_id)
     return response
+
+@app.get('/js/{file_name:str}')
+def serve_javascript(file_name:str):
+    file_path = Path(global_config.PATH_JAVASCRIPT,file_name)
+    with open(file_path,'rt',encoding='utf-8') as f:
+        body = f.read()
+    status_code = 200  #see other
+    headers = {'Content-Type':'text/javascript'}
+    return Response(content=body, status_code=status_code, headers=headers)
 
 @app.get('/admin/user')
 def serve_user_list_page(session_id:str = Cookie(default='-')):

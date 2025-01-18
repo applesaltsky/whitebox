@@ -18,6 +18,8 @@ class GlobalConfig:
         self.NAME_COMMENT_TABLE = 'COMMENT_TABLE'
         self.NAME_USER_TABLE = 'USER_TABLE'
         self.PATH_TEMPLATES = Path(self.PATH_PROJECT,'templates')
+        self.PATH_STATIC = Path(self.PATH_PROJECT,'static')
+        self.PATH_JAVASCRIPT = Path(self.PATH_STATIC,'js')
         self.time_server_started = datetime.now()
         self.reload = False
         if is_windows():

@@ -21,7 +21,8 @@ class DBController:
                 title TEXT NOT NULL,
                 category TEXT NOT NULL,
                 created_time TEXT NOT NULL,
-                content TEXT NOT NULL
+                content TEXT NOT NULL,
+                view_count INTEGER DEFAULT 0
             )
         '''       
 
@@ -57,9 +58,11 @@ class DBController:
             title,
             category,
             created_time,
-            content
+            content,
+            view_count
         )
         VALUES (
+            ?,
             ?,
             ?,
             ?,
@@ -94,6 +97,7 @@ class DBController:
                 CONTENT.category, 
                 CONTENT.created_time, 
                 CONTENT.content,
+                CONTENT.view_count,
                 USER.user_id 
         FROM
             (
@@ -102,7 +106,8 @@ class DBController:
                         title, 
                         category, 
                         created_time, 
-                        content
+                        content,
+                        view_count
                 FROM CONTENT_TABLE
             ) AS CONTENT,
             (
@@ -122,6 +127,7 @@ class DBController:
                  CONTENT.category, 
                  CONTENT.created_time, 
                  CONTENT.content,
+                 CONTENT.view_count,
                  USER.user_id                                                                   
         FROM (
                 SELECT  content_idx, 
@@ -129,7 +135,8 @@ class DBController:
                         title, 
                         category, 
                         created_time, 
-                        content
+                        content,
+                        view_count
                 FROM CONTENT_TABLE
                 WHERE 1=1 
                     AND CONTENT_IDX = {{content_idx}}                                                                   
@@ -142,6 +149,20 @@ class DBController:
         WHERE 1=1
             AND CONTENT.user_idx = USER.user_idx                                                                                                                                            
         
+        """)
+
+        self.SQL_GET_CONTENT_VIEW_COUNT = jinja2.Template("""
+        SELECT view_count
+        FROM CONTENT_TABLE
+        WHERE 1=1
+            AND content_idx = {{content_idx}}
+        """)
+
+        self.SQL_UPDATE_CONTENT_VIEW_COUNT = jinja2.Template("""
+        UPDATE CONTENT_TABLE
+        SET view_count = {{view_count}}
+        WHERE 1=1
+            AND content_idx = {{content_idx}}                                             
         """)
 
         self.SQL_GET_ALL_USER = """
@@ -204,8 +225,7 @@ class DBController:
         FROM USER_TABLE
         """
 
-        self.SQL_PUSH_USER = jinja2.Template(
-        """
+        self.SQL_PUSH_USER = """
         INSERT 
         INTO USER_TABLE (
             user_idx,
@@ -218,17 +238,17 @@ class DBController:
             previlage
         )
         VALUES (
-            {{user_idx}}, 
-            "{{user_id}}", 
-            "{{user_password}}", 
-            "{{user_find_password_question}}", 
-            "{{user_find_password_answer}}",
-            "{{user_email}}",
-            "{{created_time}}",
-            "{{previlage}}"
+            ?,
+            ?, 
+            ?, 
+            ?, 
+            ?,
+            ?,
+            ?,
+            ?
         )
         """
-        )
+        
 
     def init_db(self,db_path:Path|str):
         self.db_path:Path = Path(db_path)
@@ -252,13 +272,14 @@ class DBController:
         SQL = self.SQL_PUSH_CONTENT
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
-            
+            view_cnt = 0
             cursor.execute(SQL,(content_idx,
                                 user_idx,
                                 title,
                                 category,
                                 created_time.strftime("%Y%m%d%H%M%S"),
-                                content))
+                                content,
+                                view_cnt))
             conn.commit()
 
     def get_max_content_idx(self)->int:
@@ -284,7 +305,7 @@ class DBController:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
-            for content_idx,user_idx,title,category,created_time,content,user_id in cursor.execute(SQL):
+            for content_idx,user_idx,title,category,created_time,content,view_count,user_id in cursor.execute(SQL):
                 rst.append({
                             'content_idx':content_idx,
                             'user_idx':user_idx,
@@ -292,6 +313,7 @@ class DBController:
                             'category':category,
                             'created_time':created_time,
                             'content':content,
+                            'view_count':view_count,
                             'user_id':user_id
                             })
             return rst
@@ -312,7 +334,7 @@ class DBController:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
-            for content_idx,user_idx,title,category,created_time,content,user_id in cursor.execute(SQL):
+            for content_idx,user_idx,title,category,created_time,content,view_count,user_id in cursor.execute(SQL):
                 rst.append({
                             'content_idx':content_idx,
                             'user_idx':user_idx,
@@ -320,6 +342,7 @@ class DBController:
                             'category':category,
                             'created_time':created_time,
                             'content':content,
+                            'view_count':view_count,
                             'user_id':user_id
                         })
             NO_CONTENT = len(rst) == 0
@@ -334,7 +357,27 @@ class DBController:
             cursor = conn.cursor()
             cursor.execute(SQL)
             conn.commit()
+
+    def get_content_view_count(self,content_idx:int)->int:
+        SQL = self.SQL_GET_CONTENT_VIEW_COUNT.render(**{'content_idx':content_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            rst = None
+            for row in cursor.execute(SQL):
+                rst = row[0]
+            if rst is None:
+                rst = -1
+            return rst
         
+    def add_one_content_view_count(self,content_idx:int):
+        view_count = self.get_content_view_count(content_idx)
+        new_view_count = view_count + 1
+        SQL = self.SQL_UPDATE_CONTENT_VIEW_COUNT.render(**{'content_idx':content_idx,'view_count':new_view_count})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL)
+            conn.commit()
+               
     def get_max_user_idx(self)->int:
         ''' 
         return integer
@@ -401,19 +444,19 @@ class DBController:
             return rst
 
     def push_user(self,user_idx:int,user_id:str, user_password:str,user_find_password_question:str, user_find_password_answer:str, user_email:str, created_time:datetime, previlage:str):
-        SQL = self.SQL_PUSH_USER.render(**{
-                                            'user_idx':user_idx,
-                                            'user_id':user_id,
-                                            'user_password':user_password,
-                                            'user_find_password_question':user_find_password_question,
-                                            'user_find_password_answer':user_find_password_answer,
-                                            'user_email':user_email,
-                                            'created_time':created_time.strftime("%Y%m%d%H%M%S"),
-                                            'previlage':previlage
-                                           })
+        SQL = self.SQL_PUSH_USER
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
-            cursor.execute(SQL)
+            cursor.execute(SQL,(user_idx,
+                                user_id,
+                                user_password,
+                                user_find_password_question,
+                                user_find_password_answer,
+                                user_email,
+                                created_time,
+                                previlage
+                                )
+                            )
             conn.commit()
 
 

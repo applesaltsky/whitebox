@@ -120,6 +120,7 @@
                         <th>user_id</th>
                         <th>category</th>
                         <th>title</th>
+                        <th>view_count</th>
                         <th>created_time</th>
                     </tr>
                 </thead>
@@ -130,6 +131,7 @@
                         <td>{{row['user_id']}}</td>
                         <td>{{row['category']}}</td>
                         <td> <a href='/content/{{row['content_idx']}}'> {{row['title']}} </a> </td>
+                        <td>{{row['view_count']}} </td>
                         <td>{{row['created_time']}} </td>
                     </tr>
                     {% endfor %}
