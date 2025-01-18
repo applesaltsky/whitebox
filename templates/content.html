@@ -20,7 +20,7 @@
         #mainframe {
             margin-top : 30px;
             text-align : left;
-            width : 350px;
+            width : 800px;
         }
 
         #top_line {
@@ -39,7 +39,7 @@
             margin-left : 5px;
         }
 
-        #title {
+        #title_view {
             text-align : center;
         }
 
@@ -56,15 +56,28 @@
             width : 100%;
         }
 
-        #user_input .user_input_form div{
-            width : 50%;
+        #user_input .user_input_form .user_input_form_category{
+            width : 20%;
         }
 
-        .user_input_submit {
+        #user_input .user_input_form .user_input_form_input{
+            width : 80%;
+            display:flex;
+        }
+
+        #user_input .user_input_content {
+            margin-top:10px;
+        }
+
+        #user_input textarea{
+            width : 100%;
+        }
+
+        #user_input .user_input_submit {
             margin-top : 10px;
         }
 
-        .user_input_submit button {
+        #user_input .user_input_submit button {
             width : 100%;
             height : 20px;
         }
@@ -75,8 +88,21 @@
     <div id='mainframe'>
         <div id='top_line'>
             <div id='top_line_empty'>
+                <h5> hello, {{user_info['user_id']}}! </h5>
             </div>
             <div id='top_line_content'>
+                <form action="/logout" method="post">
+                    <div>
+                        <button type="submit">logout</button>
+                    </div>
+                </form>
+                {% if user_info['previlage'] == 'admin' %}
+                <form action="/admin/user" method="get">
+                    <div>
+                        <button type="submit">view user table</button>
+                    </div>
+                </form>
+                {% endif %}
                 <form action="/" method="get">
                     <div>
                         <button type="submit">return to home</button>
@@ -84,35 +110,40 @@
                 </form>
             </div>
         </div>
-        <div id= 'title'>
-            <h1> login page </h1>
+        <div id= 'title_view'>
+            <h1> write content </h1>
         </div>
-        <div id ='view'>
-            <div> {{error_message}} </div>
+        <div id='view'>
             <div id='user_input'>
-                <form action="/login" method="post">
+                <form action="/content" method="post">
                     <div class='user_input_form'> 
                         <div class='user_input_form_category'>
-                            ID
+                            TITLE
                         </div>
                         <div class='user_input_form_input'>
-                            <input type="text" id="user_id" name="user_id" required>
-                        </div>              
-                    </div>
-                    <div class='user_input_form'> 
-                        <div class='user_input_form_category'>
-                            PASSWORD
-                        </div>
-                        <div class='user_input_form_input'>
-                            <input type="password" id="user_password" name="user_password" required></input>   
+                            <input type="text" id="title" name="title" aria-label="title" required></input>
                         </div> 
                     </div>
+                    <div class='user_input_form'> 
+                        <div class='user_input_form_category'>
+                            CATEGORY
+                        </div>
+                        <div class='user_input_form_input'>
+                            {% for category in category_list %}
+                            <label for="{{category}}">{{category}}</label>
+                            <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class='user_input_content'>
+                        <textarea id="content" name="content" rows="20" aria-label="content" required></textarea>
+                    </div>
                     <div class='user_input_submit'>
-                        <button type="submit">LOGIN</button>
+                        <button type="submit">전송</button>
                     </div>
                 </form>
             </div>
-        </div> 
+        </div>
     </div>
 </body>
-</html>    
+</html>

@@ -49,8 +49,7 @@ class DBController:
             )
         '''
 
-        self.SQL_PUSH_CONTENT = jinja2.Template(
-        """
+        self.SQL_PUSH_CONTENT = """
         INSERT 
         INTO CONTENT_TABLE (
             content_idx,
@@ -61,15 +60,22 @@ class DBController:
             content
         )
         VALUES (
-            {{content_idx}}, 
-            {{user_idx}}, 
-            "{{title}}", 
-            "{{category}}",
-            "{{created_time}}", 
-            "{{content}}"
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
         )
         """
-        )
+
+        self.SQL_DELETE_CONTENT = jinja2.Template("""
+        DELETE 
+        FROM CONTENT_TABLE
+        WHERE 1=1
+            AND content_idx = {{content_idx}}
+        """)
+        
 
         self.SQL_MAX_CONTENT_IDX = """
         SELECT MAX(content_idx)
@@ -82,25 +88,60 @@ class DBController:
         """    
 
         self.SQL_GET_ALL_CONTENT = """
-        SELECT  content_idx, 
-                user_idx, 
-                title, 
-                category, 
-                created_time, 
-                content
-        FROM CONTENT_TABLE
-        """
+        SELECT  CONTENT.content_idx, 
+                CONTENT.user_idx, 
+                CONTENT.title, 
+                CONTENT.category, 
+                CONTENT.created_time, 
+                CONTENT.content,
+                USER.user_id 
+        FROM
+            (
+                SELECT  content_idx, 
+                        user_idx, 
+                        title, 
+                        category, 
+                        created_time, 
+                        content
+                FROM CONTENT_TABLE
+            ) AS CONTENT,
+            (
+                SELECT  user_idx,
+                        user_id   
+                FROM USER_TABLE
+            ) AS USER
+        WHERE 1=1
+            AND CONTENT.user_idx = USER.user_idx  
+        
+        """   
 
         self.SQL_GET_CONTENT = jinja2.Template("""
-        SELECT  content_idx, 
-                user_idx, 
-                title, 
-                category, 
-                created_time, 
-                content
-        FROM CONTENT_TABLE
-        WHERE 1=1 
-            AND CONTENT_IDX = {{content_idx}}
+        SELECT   CONTENT.content_idx, 
+                 CONTENT.user_idx, 
+                 CONTENT.title, 
+                 CONTENT.category, 
+                 CONTENT.created_time, 
+                 CONTENT.content,
+                 USER.user_id                                                                   
+        FROM (
+                SELECT  content_idx, 
+                        user_idx, 
+                        title, 
+                        category, 
+                        created_time, 
+                        content
+                FROM CONTENT_TABLE
+                WHERE 1=1 
+                    AND CONTENT_IDX = {{content_idx}}                                                                   
+            ) AS CONTENT,
+            (
+                SELECT  user_idx,
+                        user_id   
+                FROM USER_TABLE                                                                                  
+            ) AS USER     
+        WHERE 1=1
+            AND CONTENT.user_idx = USER.user_idx                                                                                                                                            
+        
         """)
 
         self.SQL_GET_ALL_USER = """
@@ -138,9 +179,9 @@ class DBController:
                user_email,
                created_time,
                previlage
-        FROM USER_TABLE
+        FROM USER_TABLE                                                                  
         WHERE 1=1
-            AND USER_IDX = {{USER_IDX}}
+            AND user_idx = {{USER_IDX}}
         """)
 
         self.SQL_FIND_USER_WITH_ID_PW = jinja2.Template("""
@@ -189,12 +230,8 @@ class DBController:
         """
         )
 
-    def init_db(self,db_path:Path|str,init:bool=False):
+    def init_db(self,db_path:Path|str):
         self.db_path:Path = Path(db_path)
-
-        if init is True:
-            if os.path.exists(self.db_path):
-                os.remove(self.db_path)
 
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
@@ -212,17 +249,16 @@ class DBController:
                     category:str,
                     created_time:datetime,
                     content:str):
+        SQL = self.SQL_PUSH_CONTENT
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
-            SQL_PUSH_CONTENT = self.SQL_PUSH_CONTENT.render(**{
-                                                            'content_idx':content_idx,
-                                                            'user_idx':user_idx,
-                                                            'title':title,
-                                                            'category':category,
-                                                            'created_time':created_time.strftime("%Y%m%d%H%M%S"),
-                                                            'content':content
-                                                            })
-            cursor.execute(SQL_PUSH_CONTENT)
+            
+            cursor.execute(SQL,(content_idx,
+                                user_idx,
+                                title,
+                                category,
+                                created_time.strftime("%Y%m%d%H%M%S"),
+                                content))
             conn.commit()
 
     def get_max_content_idx(self)->int:
@@ -243,51 +279,62 @@ class DBController:
             else:
                 return rst
             
-    def get_content_list(self,init_row_idx=None,row_count=None)->tuple:
+    def get_content_list(self,init_row_idx=None,row_count=None)->list[dict]:
         SQL = self.SQL_GET_ALL_CONTENT
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
-            for content_idx,user_idx,title,category,created_time,content in cursor.execute(SQL):
+            for content_idx,user_idx,title,category,created_time,content,user_id in cursor.execute(SQL):
                 rst.append({
                             'content_idx':content_idx,
                             'user_idx':user_idx,
                             'title':title,
                             'category':category,
                             'created_time':created_time,
-                            'content':content
+                            'content':content,
+                            'user_id':user_id
                             })
             return rst
                    
-    def get_content(self,content_idx:int)->tuple:
+    def get_content(self,content_idx:int)->dict:
         """
         return {
                     'content_idx':content_idx,
                     'user_idx':user_idx,
                     'title':title,
+                    'category':category,
                     'created_time':created_time,
-                    'content':content
+                    'content':content,
+                    'user_id':user_id
                 }
         """
         SQL = self.SQL_GET_CONTENT.render(**{"content_idx":content_idx})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
-            for content_idx,user_idx,title,category,created_time,content in cursor.execute(SQL):
+            for content_idx,user_idx,title,category,created_time,content,user_id in cursor.execute(SQL):
                 rst.append({
                             'content_idx':content_idx,
                             'user_idx':user_idx,
                             'title':title,
                             'category':category,
                             'created_time':created_time,
-                            'content':content
+                            'content':content,
+                            'user_id':user_id
                         })
             NO_CONTENT = len(rst) == 0
             if NO_CONTENT:
                 return None
             else:
                 return rst[0]
-
+            
+    def delete_content(self,content_idx:int):
+        SQL = self.SQL_DELETE_CONTENT.render(**{"content_idx":content_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL)
+            conn.commit()
+        
     def get_max_user_idx(self)->int:
         ''' 
         return integer

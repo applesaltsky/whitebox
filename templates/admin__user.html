@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간단한 양식</title>
+    <style>
+        * {
+            margin: 0;               /* 모든 요소의 기본 마진 제거 */
+            padding: 0;              /* 모든 요소의 기본 패딩 제거 */
+            box-sizing: border-box;  /* 박스 모델을 border-box로 설정 */
+            font-family: Arial, sans-serif; /* 기본 글꼴 설정 */
+        }
+
+        body {
+            display:flex;
+            justify-content:center;
+        }
+        
+        #mainframe {
+            margin-top : 30px;
+            text-align : left;
+            width : 1200px;
+        }
+
+        #top_line {
+            display: flex; 
+            justify-content: space-between;
+            text-align:right;
+        }
+
+        #top_line #top_line_content {
+            width : 30%;
+            display : flex;
+            justify-content: flex-end;
+        }
+
+        #top_line #top_line_content div {
+            margin-left : 5px;
+        }
+
+        #title_view {
+            text-align : center;
+        }
+
+        #view {
+            margin-top : 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div id='mainframe'>
+        <div id='top_line'>
+            <div id='top_line_empty'>
+                {% if user_info %}
+                    <h5> hello, {{user_info['user_id']}}! </h5>
+                {% endif %}
+            </div>
+            <div id='top_line_content'>
+                <form action="/logout" method="post">
+                    <div>
+                        <button type="submit">logout</button>
+                    </div>
+                </form>
+                <form action="/" method="get">
+                    <div>
+                        <button type="submit">return to home</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id='title_view'>
+            <h1> user list </h1>
+        </div>
+        <div id ='view'>
+            <table>
+                <thead>
+                    <tr>
+                        <th>previlage</th>
+                        <th>user_idx</th>
+                        <th>user_id</th>
+                        <th>user_password</th>
+                        <th>user_find_password_question</th>
+                        <th>user_find_password_answer</th>
+                        <th>user_email</th>
+                        <th>created_time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in user_list %}
+                    <tr>
+                        <td> {{row['previlage']}} </td>
+                        <td> {{row['user_idx']}} </td>
+                        <td> {{row['user_id']}} </td>
+                        <td> {{row['user_password']}} </td>
+                        <td> {{row['user_find_password_question']}} </td>
+                        <td> {{row['user_find_password_answer']}} </td>
+                        <td> {{row['user_email']}} </td>
+                        <td> {{row['created_time']}} </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

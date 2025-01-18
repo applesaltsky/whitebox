@@ -39,28 +39,33 @@
             margin-left : 5px;
         }
 
-        #title {
+        #title_view {
             text-align : center;
         }
 
         #view {
-            margin-top : 30px;
+            margin-top : 10px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        #content_info {
+            text-align : right;
         }
-        table, th, td {
-            border: 1px solid black;
+
+        #content_info span {
+            margin-left : 10px;
         }
-        th, td {
-            padding: 8px;
-            text-align: left;
+
+        #content_support {
+            text-align : right;
         }
-        th {
-            background-color: #f2f2f2;
+
+        #content {
+            text-align: left;       /* 텍스트 중앙 정렬 */
+            border: 1px solid black;  /* 시각적 구분을 위한 테두리 */
+            padding : 20px;
+            margin-top:10px;
         }
+
     </style>
 </head>
 <body>
@@ -109,33 +114,29 @@
                     </form>
             </div>
         </div>
-        <div id='title'>   
-            <h1> content list </h1>
-        </div>
+        <h1 id='title_view'> {{content['title']}} </h1>
         <div id='view'>
-            <table>
-                <thead>
-                    <tr>
-                        <th>content_idx</th>
-                        <th>user_idx</th>
-                        <th>category</th>
-                        <th>title</th>
-                        <th>created_time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in content_list %}
-                    <tr>
-                        <td>{{row['content_idx']}}</td>
-                        <td>{{row['user_idx']}}</td>
-                        <td>{{row['category']}}</td>
-                        <td> <a href='/content/{{row['content_idx']}}'> {{row['title']}} </a> </td>
-                        <td>{{row['created_time']}} </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div id='content_info'>  
+                <span> user_id : {{content['user_id']}} </span> 
+                <span> created_time : {{content['created_time']}} </span> 
+            </div>
+            <div id='content'>   
+            </div>
         </div>
     </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const markdownInput = `
+
+{{content['content']}}
+        
+        `;
+        console.log(markdownInput);
+        const markdownOutput = document.getElementById('content');
+        markdownOutput.innerHTML = 
+            marked.parse(markdownInput);
+    </script>
 </body>
 </html>
