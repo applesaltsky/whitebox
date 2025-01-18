@@ -17,5 +17,6 @@ class GlobalConfig:
         self.reload = False
         if is_windows():
             self.reload = True
+        self.max_session_age = 3600 * 12  #sec 
 
 global_config = GlobalConfig()

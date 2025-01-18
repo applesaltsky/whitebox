@@ -1,14 +1,18 @@
 #get global config
 from global_config import global_config
 from global_db_control import DBController
+from session_control import SessionController
 
-from fastapi import FastAPI, Response, Request, Form, Query, APIRouter, Depends
+from fastapi import FastAPI, Response, Request, Form, Query, Cookie
 from fastapi.responses import RedirectResponse
-import uvicorn, jinja2
+import uvicorn, jinja2, psutil
 
+from uuid import uuid4
 from datetime import datetime
 import time
 
+#init session control
+session_controller = SessionController()
 
 #init db and push one admin to user db
 db_controller = DBController()
@@ -32,20 +36,24 @@ if empty_user_db:
                     created_time=datetime.now(),
                     previlage='admin')    
 
-
+#create fastapi application instance
 app = FastAPI()
 
+#add middleware to app
 @app.middleware('http')
-def add_process_time_logger(request:Request, call_next):
+def add_logger(request:Request, call_next):
     start_time = time.time()
     response = call_next(request)
     process_time = time.time() - start_time
-    print(' time : ',datetime.now(), ' url : ', request.url, ' proc_time : ', process_time, 'sec')
+    memory_usage_mb = psutil.Process().memory_info().rss / (1024 * 1024)
+    print(datetime.now(), ' url : ', request.url, ' method :', request.method, f' proc_time : {process_time:.2f} sec', f' memory usage : {memory_usage_mb:.2f} MB')
     return response
 
-
-user = APIRouter()
-admin = APIRouter()
+@app.middleware('http')
+def del_old_session(request:Request, call_next):
+    session_controller.del_old_session(max_age=global_config.max_session_age)
+    response = call_next(request)
+    return response
 
 @app.get('/')
 def home_handler():
@@ -300,21 +308,28 @@ def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=
         return RedirectResponse(url=f'/login?error_message={error_message}', status_code=status_code)
         
     status_code = 303  #see other
-    return RedirectResponse(url='/login', status_code=status_code)
+    response = RedirectResponse(url='/', status_code=status_code)
+
+    max_age_session = global_config.max_session_age  #sec
+    session_id = str(uuid4())
+    response.set_cookie(key='session_id',
+                        value=session_id,
+                        max_age=max_age_session
+                        )
+    session_controller.push_session(session_id,user_info)
+    return response
 
 @app.post('/logout')
-def user_logout_requests_handler():
+def user_logout_requests_handler(session_id:str = Cookie(default='-')):
     status_code = 303  #see other
     response =  RedirectResponse(url='/login', status_code=status_code)
-    response.set_cookie(key="user_id",
-                        value="-",
-                        max_age=0)
     response.set_cookie(key='session_id',
                         value="-",
                         max_age=0)
+    session_controller.del_session(session_id)
     return response
 
-@admin.get('/admin/user')
+@app.get('/admin/user')
 def serve_user_list_page():
     user_list = db_controller.get_user_list(init_row_idx=None,row_count=None)
     body = """
@@ -382,8 +397,6 @@ def serve_user_list_page():
     headers = {'Content-Type':'text/html'}
     return Response(content=body, status_code=status_code, headers=headers)
 
-app.include_router(user)
-app.include_router(admin)
 
 if __name__ == "__main__":
     print(f"server started : {global_config.time_server_started}")
