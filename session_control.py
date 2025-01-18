@@ -3,7 +3,9 @@ import time
 
 class SessionController:
     def __init__(self):
+        #in memory session
         self.session_db = []
+
 
     def push_session(self,session_id:str,user_info:dict):
         new_session = {
