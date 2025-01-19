@@ -9,10 +9,10 @@ import uvicorn, jinja2, psutil
 
 from uuid import uuid4
 from datetime import datetime
-import time
 from pathlib import Path
 from io import BytesIO
 from PIL import Image
+import time,re,os
 
 #init session control
 session_controller = SessionController()
@@ -157,12 +157,48 @@ def submit_content_form_handler(session_id:str = Cookie(default='-')):
 def submit_content_request_handler(title:str = Form(default='test'), 
                                    category:str=Form(default='test'), 
                                    content:str = Form(default='test'),
-                                   session_id:str = Cookie(default='-')):
+                                   session_id:str = Cookie(default='-'),
+                                   content_idx:int|None = Form(default=None)):
     user_info = session_controller.get_session(session_id)
     if user_info is None:
         return RedirectResponse(url='/')
-    new_content_idx = db_controller.get_max_content_idx()+1
-    db_controller.push_content(content_idx = new_content_idx, 
+    
+    def get_image_list(content:str)->list[str]:
+        pattern = '<img src="/image/.*/>'
+        img_files = []
+        for i in re.compile(pattern).findall(content):
+            f:str = len('<img src="/image/')
+            e:str = '.webp"'
+            i:str = i[f:]
+            i:str = i[:i.find(e)]
+            i:str = i + '.webp'
+            img_files.append(i)
+        return img_files
+    
+    def refresh_image_storage(new_img_list:list[str],old_img_list:list[str]):
+        for img in old_img_list:
+            is_deleted_image = img not in new_img_list
+            if is_deleted_image:
+                imagePath = Path(global_config.PATH_IMAGE,img)
+                if os.path.exists(imagePath):
+                    os.remove(imagePath)
+                else:
+                    print(f'refresh_image_storage failed, check this file, {img}')
+    
+    is_new_content = content_idx is None
+    if is_new_content:
+        content_idx = db_controller.get_max_content_idx()+1
+    new_img_list = get_image_list(content)
+
+    if not is_new_content:
+        old_img_list = db_controller.get_image_with_content_idx(content_idx)
+        refresh_image_storage(new_img_list,old_img_list)
+        db_controller.delete_image_with_content_idx(content_idx)
+        
+    for img in new_img_list:
+        db_controller.push_image(img,content_idx)
+
+    db_controller.push_content(content_idx = content_idx, 
                                user_idx = user_info['user_idx'], 
                                title = title, 
                                category = category,
@@ -324,8 +360,8 @@ def user_logout_requests_handler(session_id:str = Cookie(default='-')):
 @app.post('/fs/upload/image')
 def upload_image(image:UploadFile|None = Form(default=None)):
     '''
-    this function save image file on folder and return download url
-    return '/images/20250119190633_73cfb64d-88ce-419f-b112-c357f3c22a4d.png'
+    this function save image file on folder and return filename
+    return '20250119190633_73cfb64d-88ce-419f-b112-c357f3c22a4d.png'
 
     '''
     if image is None:
@@ -364,8 +400,7 @@ def upload_image(image:UploadFile|None = Form(default=None)):
     with open(file_path,'wb') as f:
         f.write(imageBytes)
 
-    download_url = f'/image/{file_name}'
-    body = download_url
+    body = file_name
     status_code = 200
     headers = {'Content-Type':'text/plain'}
     return Response(content=body, status_code=status_code, headers=headers)
@@ -389,7 +424,13 @@ def serve_css(file_name:str):
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.get('/image/{file_name:str}')
-def serve_image(file_name:str):
+def serve_image(file_name:str,session_id:str = Cookie(default='-')):
+    user_info = session_controller.get_session(session_id)
+    not_login_client = user_info is None
+    if not_login_client:
+        status_code = 303 #see other
+        return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
+
     file_path = Path(global_config.PATH_IMAGE,file_name)
     with open(file_path,'rb') as f: 
         body = f.read()

@@ -50,6 +50,13 @@ class DBController:
             )
         '''
 
+        self.SQL_INIT_IMAGE_TABLE = '''
+            CREATE TABLE IF NOT EXISTS IMAGE_TABLE (
+                filename TEXT PRIMARY KEY,
+                content_idx int
+            )
+        '''
+
         self.SQL_PUSH_CONTENT = """
         INSERT 
         INTO CONTENT_TABLE (
@@ -253,6 +260,32 @@ class DBController:
             ?
         )
         """
+
+        self.SQL_FIND_IMAGE_WITH_CONTENT_IDX = jinja2.Template("""
+        SELECT filename
+        FROM IMAGE_TABLE
+        WHERE 1=1
+            AND content_idx = {{content_idx}}
+        """)
+
+        self.SQL_DELETE_IMAGE_WITH_CONTENT_IDX = jinja2.Template("""
+        DELETE 
+        FROM IMAGE_TABLE
+        WHERE 1=1
+            AND content_idx = {{content_idx}}
+        """)
+
+        self.SQL_PUSH_IMAGE = """
+        INSERT
+        INTO IMAGE_TABLE (
+            filename,
+            content_idx
+        )
+        VALUES (
+            ?,
+            ?
+        )
+        """
         
 
     def init_db(self,db_path:Path|str):
@@ -264,6 +297,7 @@ class DBController:
             cursor.execute(self.SQL_INIT_CONTENT_TABLE)
             cursor.execute(self.SQL_INIT_COMMENT_TABLE)
             cursor.execute(self.SQL_INIT_USER_TABLE)
+            cursor.execute(self.SQL_INIT_IMAGE_TABLE)
 
             conn.commit()
     
@@ -464,6 +498,25 @@ class DBController:
                             )
             conn.commit()
 
+    def get_image_with_content_idx(self,content_idx:int)->list[str]:
+        SQL = self.SQL_FIND_IMAGE_WITH_CONTENT_IDX.render(**{'content_idx':content_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            return [filename for filename in cursor.execute(SQL)]
+
+    def delete_image_with_content_idx(self,content_idx:int)->list[str]:
+        SQL = self.SQL_DELETE_IMAGE_WITH_CONTENT_IDX.render(**{'content_idx':content_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL)
+            conn.commit()
+
+    def push_image(self,filename:str,content_idx:int):
+        SQL = self.SQL_PUSH_IMAGE
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL,(filename, content_idx))
+            conn.commit()        
 
         
             
