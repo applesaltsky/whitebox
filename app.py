@@ -3,7 +3,7 @@ from global_config import global_config
 from global_db_control import DBController
 from session_control import SessionController
 
-from fastapi import FastAPI, Response, Request, Form, Query, Cookie
+from fastapi import FastAPI, Response, Request, Form, Query, Cookie, UploadFile
 from fastapi.responses import RedirectResponse
 import uvicorn, jinja2, psutil
 
@@ -11,6 +11,8 @@ from uuid import uuid4
 from datetime import datetime
 import time
 from pathlib import Path
+from io import BytesIO
+from PIL import Image
 
 #init session control
 session_controller = SessionController()
@@ -115,14 +117,19 @@ async def confirm_admin_client_session(request:Request, call_next):
 
 #set routing
 @app.get('/')
-def home_handler(session_id:str = Cookie(default='-')):
+def home_handler(session_id:str = Cookie(default='-'),category:str|None=Query(default=None)):
     template = 'home.html'
     with open(Path(global_config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
+
     user_info = session_controller.get_session(session_id)
-    content_list = db_controller.get_content_list()
-    content_list = sorted(content_list, key=lambda content : content['created_time'], reverse=True)
-    body = jinja2.Template(body).render(**{"content_list":content_list,"user_info":user_info})
+
+    content_list = db_controller.get_content_list(category=category)
+    
+    body = jinja2.Template(body).render(**{"content_list":content_list,
+                                           "user_info":user_info,
+                                           "category_list":global_config.category_list
+                                           })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
@@ -138,7 +145,8 @@ def submit_content_form_handler(session_id:str = Cookie(default='-')):
         body = f.read()
     body = jinja2.Template(body).render(**{
                                            "user_info":user_info,
-                                           'category_list':global_config.category_list
+                                           'category_list':global_config.category_list,
+                                           'created_time':datetime.now().strftime("%Y%m%d%H%M%S")
                                            }
                                         )
     status_code = 200
@@ -163,7 +171,7 @@ def submit_content_request_handler(title:str = Form(default='test'),
     status_code = 303  #see other
     return RedirectResponse(url='/', status_code=status_code)
 
-@app.get('/content/{content_idx}')
+@app.get('/content/{content_idx:int}')
 def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     db_controller.add_one_content_view_count(content_idx)
     template = 'content__content_idx.html'
@@ -176,6 +184,31 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
+
+@app.post('/delete/content/{content_idx:int}')
+def delete_content(content_idx:int,session_id:str=Cookie(default='-')):
+    user_info = session_controller.get_session(session_id)
+    
+    not_login_client = user_info is None
+    if not_login_client:
+        status_code = 303 #see other
+        return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
+
+    content = db_controller.get_content(content_idx)
+
+    user_is_not_admin = user_info['previlage'] != 'admin'
+    login_user_is_not_author = user_info['user_idx'] != content['user_idx']
+    if login_user_is_not_author and user_is_not_admin:
+        status_code = 303 #see other
+        return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
+
+    db_controller.delete_content(content_idx)
+    status_code = 303 #see other
+    return RedirectResponse('/',status_code=status_code)
+    
+    
+
+
 
 @app.get('/user')
 def submit_user_form_handler(error_message:str = Query(default=' ')):
@@ -288,6 +321,55 @@ def user_logout_requests_handler(session_id:str = Cookie(default='-')):
     session_controller.del_session(session_id)
     return response
 
+@app.post('/fs/upload/image')
+def upload_image(image:UploadFile|None = Form(default=None)):
+    '''
+    this function save image file on folder and return download url
+    return '/images/20250119190633_73cfb64d-88ce-419f-b112-c357f3c22a4d.png'
+
+    '''
+    if image is None:
+        body = 'no image contained on upload image request.'
+        status_code = 400 #bad request
+        headers = {'Content-Type':'text/plain'}
+        return Response(content=body, status_code=status_code, headers=headers)
+    
+    accept = ['.jpg','.png','.jpeg','.webp']
+    not_acceptable_extension = len(list(filter(lambda extension:extension in image.filename,accept))) == 0
+    if not_acceptable_extension:
+        body = 'image extension should be .'
+        for a in accept:
+            body += a
+            body += ';'
+        status_code = 400 #bad request
+        headers = {'Content-Type':'text/plain'}
+        return Response(content=body, status_code=status_code, headers=headers)
+    
+    def convert_to_webp(image_bytes:bytes)->bytes:
+        imageBytesIO_webp = BytesIO()
+        with Image.open(BytesIO(image_bytes),'r') as img:
+            img.save(imageBytesIO_webp,'webp')
+        imageBytesIO_webp.seek(0)
+        return imageBytesIO_webp.read()
+
+    imageBytes:bytes= image.file.read()
+    extension_is_webp = '.webp' in image.filename
+    if not extension_is_webp:
+        imageBytes = convert_to_webp(imageBytes)
+        
+    upload_time = datetime.now().strftime("%Y%m%d%H%M%S")
+    random = str(uuid4())
+    file_name = f"{upload_time}_{random}.webp"
+    file_path = Path(global_config.PATH_IMAGE,file_name)
+    with open(file_path,'wb') as f:
+        f.write(imageBytes)
+
+    download_url = f'/image/{file_name}'
+    body = download_url
+    status_code = 200
+    headers = {'Content-Type':'text/plain'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
 @app.get('/js/{file_name:str}')
 def serve_javascript(file_name:str):
     file_path = Path(global_config.PATH_JAVASCRIPT,file_name)
@@ -295,6 +377,24 @@ def serve_javascript(file_name:str):
         body = f.read()
     status_code = 200  #see other
     headers = {'Content-Type':'text/javascript'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
+@app.get('/css/{file_name:str}')
+def serve_css(file_name:str):
+    file_path = Path(global_config.PATH_CSS,file_name)
+    with open(file_path,'rt',encoding='utf-8') as f:
+        body = f.read()
+    status_code = 200  #see other
+    headers = {'Content-Type':'text/css'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
+@app.get('/image/{file_name:str}')
+def serve_image(file_name:str):
+    file_path = Path(global_config.PATH_IMAGE,file_name)
+    with open(file_path,'rb') as f: 
+        body = f.read()
+    status_code = 200  #see other
+    headers = {'Content-Type':'image/webp'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.get('/admin/user')

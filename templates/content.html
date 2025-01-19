@@ -4,56 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간단한 양식</title>
+    <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
+    <link rel="stylesheet" href="/css/global_input.css" type="text/css"></link>
     <style>
-        * {
-            margin: 0;               /* 모든 요소의 기본 마진 제거 */
-            padding: 0;              /* 모든 요소의 기본 패딩 제거 */
-            box-sizing: border-box;  /* 박스 모델을 border-box로 설정 */
-            font-family: Arial, sans-serif; /* 기본 글꼴 설정 */
-        }
-
-        body {
-            display:flex;
-            justify-content:center;
-        }
-        
         #mainframe {
-            margin-top : 30px;
-            text-align : left;
-            width : 800px;
-        }
-
-        #top_line {
-            display: flex; 
-            justify-content: space-between;
-            text-align:right;
-        }
-
-        #top_line #top_line_content {
-            width : 50%;
-            display : flex;
-            justify-content: flex-end;
-        }
-
-        #top_line #top_line_content div {
-            margin-left : 5px;
-        }
-
-        #title_view {
-            text-align : center;
+            width : 2000px;
         }
 
         #view {
-            margin-top:30px;
-        }
-
-        #user_input .user_input_form {
             display:flex;
-            margin-top:5px;
         }
 
-        #user_input input {
-            width : 100%;
+        #editframe {
+            width : 50%;
+        }
+
+        #viewframe {
+            width : 50%;
+            padding:10px;
         }
 
         #user_input .user_input_form .user_input_form_category{
@@ -62,7 +30,7 @@
 
         #user_input .user_input_form .user_input_form_input{
             width : 80%;
-            display:flex;
+            display : flex;
         }
 
         #user_input .user_input_content {
@@ -73,13 +41,36 @@
             width : 100%;
         }
 
-        #user_input .user_input_submit {
-            margin-top : 10px;
+        #title_viewframe {
+            text-align : center;
         }
 
-        #user_input .user_input_submit button {
-            width : 100%;
-            height : 20px;
+        #content_info_viewframe {
+            margin-top : 30px;
+            text-align : right;
+        }
+
+        #content_info_viewframe span {
+            margin-left : 10px;
+        }
+
+        #content_viewframe {
+            text-align: left;       
+            border-top: 1px solid black;  
+            border-bottom : 1px solid black;
+            padding : 20px;
+            margin-top:10px;
+        }
+
+        .upload_button {
+            border-radius:5px;
+            border:1px solid #767676; 
+            text-align:center;
+            background-color: #efefef;
+        }
+
+        .upload_button:hover {
+            background-color: #e5e5e5;
         }
 
     </style>
@@ -114,36 +105,105 @@
             <h1> write content </h1>
         </div>
         <div id='view'>
-            <div id='user_input'>
-                <form action="/content" method="post">
-                    <div class='user_input_form'> 
-                        <div class='user_input_form_category'>
-                            TITLE
+            <div id="editframe">
+                <div id='user_input'>
+                    <form action="/content" method="post">
+                        <div class='user_input_form'> 
+                            <div class='user_input_form_category'>
+                                TITLE
+                            </div>
+                            <div class='user_input_form_input'>
+                                <input type="text" id="title" name="title" aria-label="title" required></input>
+                            </div> 
                         </div>
-                        <div class='user_input_form_input'>
-                            <input type="text" id="title" name="title" aria-label="title" required></input>
-                        </div> 
-                    </div>
-                    <div class='user_input_form'> 
-                        <div class='user_input_form_category'>
-                            CATEGORY
+                        <div class='user_input_form'> 
+                            <div class='user_input_form_category'>
+                                CATEGORY
+                            </div>
+                            <div class='user_input_form_input'>
+                                {% for category in category_list %}
+                                <label for="{{category}}">{{category}}</label>
+                                <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                                {% endfor %}
+                            </div>
                         </div>
-                        <div class='user_input_form_input'>
-                            {% for category in category_list %}
-                            <label for="{{category}}">{{category}}</label>
-                            <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
-                            {% endfor %}
+                        <div class='user_input_form'> 
+                            <div style="width:40%; display:flex;">
+                                <input type="file" id="imageInput" accept=".jpg, .jpeg, .png, .webp"/>
+                                <div id='upload_image_button' class='upload_button' style='width:50%'> upload image </div>
+                            </div>
+                            <div>
+
+                            </div>
                         </div>
-                    </div>
-                    <div class='user_input_content'>
-                        <textarea id="content" name="content" rows="20" aria-label="content" required></textarea>
-                    </div>
-                    <div class='user_input_submit'>
-                        <button type="submit">전송</button>
-                    </div>
-                </form>
+                        <div class='user_input_content'>
+                            <textarea id="content" name="content" rows="20" aria-label="content" placeholder="you can use markdown and html tag on this place" required></textarea>
+                        </div>
+                        <div class='user_input_submit'>
+                            <button type="submit">전송</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
+            <div id="viewframe">
+                <h1 id='title_viewframe'> EMPTY </h1>
+                <div id='content_info_viewframe'>  
+                    <span id="content_info_user_id_viewframe"> user_id : {{user_info['user_id']}} </span> 
+                    <span id="content_info_view_count_viewframe"> view_count : 0 </span>
+                    <span id="content_info_created_time_viewframe"> created_time : {{created_time}} </span> 
+                </div>
+                <div id='content_viewframe'>   
+                    empty!
+                </div>
+            </div>
+        </div> 
     </div>
+    <script src="/js/marked.min.js"></script>
+    <script>
+        const update_viewframe = ()=>{
+            const input_title = document.getElementById("title").value;
+
+            document.getElementById("title_viewframe").innerText = input_title;
+
+            const markdownInput = document.getElementById("content").value
+            const markdownOutput = document.getElementById('content_viewframe');
+            markdownOutput.innerHTML = marked.parse(markdownInput);
+        };
+        document.getElementById("title").addEventListener('input',update_viewframe);
+        document.getElementById("content").addEventListener('input',update_viewframe);
+
+        const upload_image = () => {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file); // 'image'는 서버에서 받아줄 필드 이름
+
+            fetch('/fs/upload/image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then((image_download_url) => {
+                const img_element = `
+
+<div style='text-align:center'>
+    <img src='${image_download_url}' height='300' width='300' />
+</div>
+                
+`;
+                document.getElementById("content").value = document.getElementById("content").value + img_element;
+                update_viewframe();
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+            })
+        }
+        document.getElementById('upload_image_button').addEventListener('click',upload_image)
+    </script>
 </body>
 </html>

@@ -90,7 +90,7 @@ class DBController:
         FROM CONTENT_TABLE
         """    
 
-        self.SQL_GET_ALL_CONTENT = """
+        self.SQL_GET_CONTENT_LIST = jinja2.Template("""
         SELECT  CONTENT.content_idx, 
                 CONTENT.user_idx, 
                 CONTENT.title, 
@@ -109,6 +109,10 @@ class DBController:
                         content,
                         view_count
                 FROM CONTENT_TABLE
+                WHERE 1=1
+                   {% if category %}
+                        AND category = "{{category}}"
+                   {% endif %}                                                                                                                            
             ) AS CONTENT,
             (
                 SELECT  user_idx,
@@ -116,9 +120,10 @@ class DBController:
                 FROM USER_TABLE
             ) AS USER
         WHERE 1=1
-            AND CONTENT.user_idx = USER.user_idx  
-        
-        """   
+            AND CONTENT.user_idx = USER.user_idx 
+        ORDER BY CONTENT.created_time DESC 
+        LIMIT {{limit}}
+        """ )  
 
         self.SQL_GET_CONTENT = jinja2.Template("""
         SELECT   CONTENT.content_idx, 
@@ -300,8 +305,8 @@ class DBController:
             else:
                 return rst
             
-    def get_content_list(self,init_row_idx=None,row_count=None)->list[dict]:
-        SQL = self.SQL_GET_ALL_CONTENT
+    def get_content_list(self,category:str=None,init_row_idx:int=None,row_count:int=None)->list[dict]:
+        SQL = self.SQL_GET_CONTENT_LIST.render(**{'limit':1000,'category':category})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []

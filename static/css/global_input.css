@@ -1,0 +1,21 @@
+#user_input .user_input_form {
+    display:flex;
+    margin-top:5px;
+}
+
+#user_input input {
+    width : 100%;
+}
+
+#user_input .user_input_form div{
+    width : 50%;
+}
+
+.user_input_submit {
+    margin-top : 10px;
+}
+
+.user_input_submit button {
+    width : 100%;
+    height : 20px;
+}

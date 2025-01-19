@@ -4,47 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간단한 양식</title>
+    <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
     <style>
-        * {
-            margin: 0;               /* 모든 요소의 기본 마진 제거 */
-            padding: 0;              /* 모든 요소의 기본 패딩 제거 */
-            box-sizing: border-box;  /* 박스 모델을 border-box로 설정 */
-            font-family: Arial, sans-serif; /* 기본 글꼴 설정 */
-        }
-
-        body {
-            display:flex;
-            justify-content:center;
-        }
-        
         #mainframe {
-            margin-top : 30px;
-            text-align : left;
             width : 800px;
-        }
-
-        #top_line {
-            display: flex; 
-            justify-content: space-between;
-            text-align:right;
-        }
-
-        #top_line #top_line_content {
-            width : 30%;
-            display : flex;
-            justify-content: flex-end;
-        }
-
-        #top_line #top_line_content div {
-            margin-left : 5px;
-        }
-
-        #title_view {
-            text-align : center;
-        }
-
-        #view {
-            margin-top : 10px;
         }
 
         #content_info {
@@ -55,13 +18,10 @@
             margin-left : 10px;
         }
 
-        #content_support {
-            text-align : right;
-        }
-
         #content {
-            text-align: left;       /* 텍스트 중앙 정렬 */
-            border-top: 1px solid black;  /* 시각적 구분을 위한 테두리 */
+            text-align: left;       
+            border-top: 1px solid black;  
+            border-bottom : 1px solid black;
             padding : 20px;
             margin-top:10px;
         }
@@ -78,16 +38,23 @@
             </div>
             <div id='top_line_content'>
                 {% if user_info %}
-                    <form action="/content" method="get">
-                        <div>
-                            <button type="submit">write content</button>
-                        </div>
-                    </form>
                     <form action="/logout" method="post">
                         <div>
                             <button type="submit">logout</button>
                         </div>
                     </form>
+                    <form action="/content" method="get">
+                        <div>
+                            <button type="submit">write content</button>
+                        </div>
+                    </form>
+                    {% if user_info['user_idx'] == content['user_idx'] or user_info['previlage'] == 'admin' %}
+                    <form action="/delete/content/{{content['content_idx']}}" method="post">
+                        <div>
+                            <button type="submit">delete content</button>
+                        </div>
+                    </form>
+                    {% endif %}
                     {% if user_info['previlage'] == 'admin' %}
                     <form action="/admin/user" method="get">
                         <div>
