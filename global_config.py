@@ -11,12 +11,14 @@ def is_windows():
 
 class GlobalConfig:
     def __init__(self):
+        self.PORT = 5000
         self.PATH_APP_PY =  Path(__file__)
         self.PATH_PROJECT = self.PATH_APP_PY.parent
         self.PATH_DB = Path(self.PATH_PROJECT,'databases','main.db')
         self.NAME_CONTENT_TABLE = 'CONTENT_TABLE'
         self.NAME_COMMENT_TABLE = 'COMMENT_TABLE'
         self.NAME_USER_TABLE = 'USER_TABLE'
+        self.NAME_IMAGE_TABLE = 'IMAGE_TABLE'
         self.PATH_TEMPLATES = Path(self.PATH_PROJECT,'templates')
         self.PATH_STATIC = Path(self.PATH_PROJECT,'static')
         self.PATH_JAVASCRIPT = Path(self.PATH_STATIC,'js')

@@ -452,4 +452,4 @@ def serve_user_list_page(session_id:str = Cookie(default='-')):
 
 if __name__ == "__main__":
     print(f"server started : {global_config.time_server_started}")
-    uvicorn.run("__main__:app",port=5000,reload=global_config.reload)
+    uvicorn.run("__main__:app",port=global_config.PORT,reload=global_config.reload)
