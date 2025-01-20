@@ -149,9 +149,14 @@ def submit_content_form_handler(session_id:str = Cookie(default='-'),content_idx
     content = None
     if content_idx is not None:
         content = db_controller.get_content(content_idx)
-        view_count = content['view_count']
-        created_time = content['created_time']
-        updated_time = datetime.now().strftime(global_config.time_format) 
+        is_author = content['user_idx'] == user_info['user_idx']
+        is_admin = user_info['previlage'] == 'admin'
+        if is_author or is_admin:
+            view_count = content['view_count']
+            created_time = content['created_time']
+            updated_time = datetime.now().strftime(global_config.time_format) 
+        else:
+            content_idx = None
     body = jinja2.Template(body).render(**{
                                            "content_idx":content_idx,
                                            'content':content,

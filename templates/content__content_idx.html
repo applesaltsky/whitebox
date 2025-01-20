@@ -43,25 +43,25 @@
                             <button type="submit">logout</button>
                         </div>
                     </form>
-                    <form action="/content" method="get">
-                        <div>
-                            <input style="display:none" name="content_idx" value="{{content['content_idx']}}" readonly></input>
-                            <button type="submit">update content</button>
-                        </div>
-                    </form>
                     {% if user_info['user_idx'] == content['user_idx'] or user_info['previlage'] == 'admin' %}
-                    <form action="/delete/content/{{content['content_idx']}}" method="post">
-                        <div>
-                            <button type="submit">delete content</button>
-                        </div>
-                    </form>
+                        <form action="/content" method="get">
+                            <div>
+                                <input style="display:none" name="content_idx" value="{{content['content_idx']}}" readonly></input>
+                                <button type="submit">update content</button>
+                            </div>
+                        </form>
+                        <form action="/delete/content/{{content['content_idx']}}" method="post">
+                            <div>
+                                <button type="submit">delete content</button>
+                            </div>
+                        </form>
                     {% endif %}
                     {% if user_info['previlage'] == 'admin' %}
-                    <form action="/admin/user" method="get">
-                        <div>
-                            <button type="submit">view user table</button>
-                        </div>
-                    </form>
+                        <form action="/admin/user" method="get">
+                            <div>
+                                <button type="submit">view user table</button>
+                            </div>
+                        </form>
                     {% endif %}
                 {% else %}
                     <form action="/login" method="get">
