@@ -6,6 +6,7 @@
     <title>간단한 양식</title>
     <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
     <link rel="stylesheet" href="/css/global_input.css" type="text/css"></link>
+    <link rel="stylesheet" href="/css/global_table.css" type="text/css"></link>
     <style>
         #mainframe {
             width : 2000px;
@@ -35,6 +36,7 @@
 
         #user_input .user_input_content {
             margin-top:10px;
+            padding-left:10px;
         }
 
         #user_input textarea{
@@ -108,12 +110,19 @@
             <div id="editframe">
                 <div id='user_input'>
                     <form action="/content" method="post">
+                        {% if content_idx != None %}
+                            <input style="display:none;" name="content_idx" area-label="content_idx" value="{{content_idx}}" readonly></input>
+                        {% endif %}
                         <div class='user_input_form'> 
                             <div class='user_input_form_category'>
                                 TITLE
                             </div>
                             <div class='user_input_form_input'>
-                                <input type="text" id="title" name="title" aria-label="title" required></input>
+                                {% if content_idx != None %}
+                                    <input type="text" id="title" name="title" aria-label="title" value="{{content['title']}}" required></input>
+                                {% else %}
+                                    <input type="text" id="title" name="title" aria-label="title" value="EMPTY" required></input>
+                                {% endif %}
                             </div> 
                         </div>
                         <div class='user_input_form'> 
@@ -121,10 +130,23 @@
                                 CATEGORY
                             </div>
                             <div class='user_input_form_input'>
-                                {% for category in category_list %}
-                                <label for="{{category}}">{{category}}</label>
-                                <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
-                                {% endfor %}
+                                {% if content_idx != None %}
+                                    {% for category in category_list %}
+                                        {% if category == content['category'] %}
+                                            <label for="{{category}}">{{category}}</label>
+                                            <input type="radio" id="{{category}}" name="category" value="{{category}}" required checked>
+                                        {% else %}
+                                            <label for="{{category}}">{{category}}</label>
+                                            <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                                        {% endif %}
+                                    {% endfor %}     
+                                {% else %}
+                                    {% for category in category_list %}
+                                    <label for="{{category}}">{{category}}</label>
+                                    <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                                    {% endfor %}
+                                {% endif %}
+                                
                             </div>
                         </div>
                         <div class='user_input_form'> 
@@ -137,7 +159,11 @@
                             </div>
                         </div>
                         <div class='user_input_content'>
-                            <textarea id="content" name="content" rows="20" aria-label="content" placeholder="you can use markdown and html tag on this place" required></textarea>
+                            {% if content_idx != None %}
+                                <textarea id="content" name="content" rows="20" aria-label="content" required>{{content['content']}}</textarea>
+                            {% else %}
+                                <textarea id="content" name="content" rows="20" aria-label="content" required>## you can write content with markdown and html tag on this place!</textarea>
+                            {% endif %}
                         </div>
                         <div class='user_input_submit'>
                             <button type="submit">전송</button>
@@ -148,9 +174,10 @@
             <div id="viewframe">
                 <h1 id='title_viewframe'> EMPTY </h1>
                 <div id='content_info_viewframe'>  
-                    <span id="content_info_user_id_viewframe"> user_id : {{user_info['user_id']}} </span> 
-                    <span id="content_info_view_count_viewframe"> view_count : 0 </span>
-                    <span id="content_info_created_time_viewframe"> created_time : {{created_time}} </span> 
+                    <span> user_id : {{user_info['user_id']}} </span> 
+                    <span> view_count : {{view_count}} </span>
+                    <span> created_time : {{created_time}} </span> 
+                    <span> updated_time : {{updated_time}} </span>
                 </div>
                 <div id='content_viewframe'>   
                     empty!
@@ -171,6 +198,8 @@
         };
         document.getElementById("title").addEventListener('input',update_viewframe);
         document.getElementById("content").addEventListener('input',update_viewframe);
+
+        update_viewframe();
 
         const upload_image = () => {
             const fileInput = document.getElementById('imageInput');
@@ -204,6 +233,8 @@
             })
         }
         document.getElementById('upload_image_button').addEventListener('click',upload_image)
+
+
     </script>
 </body>
 </html>

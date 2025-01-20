@@ -136,17 +136,30 @@ def home_handler(session_id:str = Cookie(default='-'),category:str|None=Query(de
 
 
 @app.get('/content')
-def submit_content_form_handler(session_id:str = Cookie(default='-')):
+def submit_content_form_handler(session_id:str = Cookie(default='-'),content_idx:int|None = Query(default=None)):
     user_info = session_controller.get_session(session_id)
     if user_info is None:
         return RedirectResponse(url='/')
     
     with open(Path(global_config.PATH_TEMPLATES,'content.html'),'rt',encoding='utf-8') as f:
         body = f.read()
+    view_count = 0
+    created_time = datetime.now().strftime(global_config.time_format) 
+    updated_time = created_time
+    content = None
+    if content_idx is not None:
+        content = db_controller.get_content(content_idx)
+        view_count = content['view_count']
+        created_time = content['created_time']
+        updated_time = datetime.now().strftime(global_config.time_format) 
     body = jinja2.Template(body).render(**{
+                                           "content_idx":content_idx,
+                                           'content':content,
                                            "user_info":user_info,
                                            'category_list':global_config.category_list,
-                                           'created_time':datetime.now().strftime("%Y%m%d%H%M%S")
+                                           'view_count':view_count,
+                                           'created_time':created_time,
+                                           'updated_time':updated_time
                                            }
                                         )
     status_code = 200
@@ -176,7 +189,7 @@ def submit_content_request_handler(title:str = Form(default='test'),
         return img_files
     
     def refresh_image_storage(new_img_list:list[str],old_img_list:list[str]):
-        for img in old_img_list:
+        for img in old_img_list:  #already stored image
             is_deleted_image = img not in new_img_list
             if is_deleted_image:
                 imagePath = Path(global_config.PATH_IMAGE,img)
@@ -186,24 +199,37 @@ def submit_content_request_handler(title:str = Form(default='test'),
                     print(f'refresh_image_storage failed, check this file, {img}')
     
     is_new_content = content_idx is None
-    if is_new_content:
+    if is_new_content:  #push new content
         content_idx = db_controller.get_max_content_idx()+1
-    new_img_list = get_image_list(content)
-
-    if not is_new_content:
-        old_img_list = db_controller.get_image_with_content_idx(content_idx)
-        refresh_image_storage(new_img_list,old_img_list)
-        db_controller.delete_image_with_content_idx(content_idx)
-        
-    for img in new_img_list:
-        db_controller.push_image(img,content_idx)
-
-    db_controller.push_content(content_idx = content_idx, 
+        img_list = get_image_list(content)
+        for img in img_list:
+            db_controller.push_image(img,content_idx)
+        created_time = datetime.now().strftime(global_config.time_format)
+        db_controller.push_content(content_idx = content_idx, 
                                user_idx = user_info['user_idx'], 
                                title = title, 
                                category = category,
-                               created_time = datetime.now(),
-                               content=content)
+                               created_time = created_time,
+                               updated_time = created_time,
+                               content = content)
+
+    else:  #update content
+        content_idx = content_idx
+        img_list = get_image_list(content)
+        old_img_list = db_controller.get_image_with_content_idx(content_idx)
+        refresh_image_storage(img_list,old_img_list)
+
+        db_controller.delete_image_with_content_idx(content_idx)
+        for img in img_list:
+            db_controller.push_image(img,content_idx)
+        
+        db_controller.update_content(content_idx=content_idx,
+                                     title=title,
+                                     category=category,
+                                     updated_time=datetime.now().strftime(global_config.time_format),
+                                     content=content)
+
+    
     status_code = 303  #see other
     return RedirectResponse(url='/', status_code=status_code)
 
@@ -424,13 +450,7 @@ def serve_css(file_name:str):
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.get('/image/{file_name:str}')
-def serve_image(file_name:str,session_id:str = Cookie(default='-')):
-    user_info = session_controller.get_session(session_id)
-    not_login_client = user_info is None
-    if not_login_client:
-        status_code = 303 #see other
-        return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
-
+def serve_image(file_name:str):
     file_path = Path(global_config.PATH_IMAGE,file_name)
     with open(file_path,'rb') as f: 
         body = f.read()

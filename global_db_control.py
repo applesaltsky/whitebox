@@ -1,8 +1,8 @@
 import jinja2
 
-import os, sqlite3
+import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 from uuid import uuid4
 
 class DBController:
@@ -21,6 +21,7 @@ class DBController:
                 title TEXT NOT NULL,
                 category TEXT NOT NULL,
                 created_time TEXT NOT NULL,
+                updated_time TEXT NOT NULL,
                 content TEXT NOT NULL,
                 view_count INTEGER DEFAULT 0
             )
@@ -65,6 +66,7 @@ class DBController:
             title,
             category,
             created_time,
+            updated_time,
             content,
             view_count
         )
@@ -75,8 +77,19 @@ class DBController:
             ?,
             ?,
             ?,
+            ?,
             ?
         )
+        """
+
+        self.SQL_UPDATE_CONTENT = """
+        UPDATE CONTENT_TABLE
+        SET title = ?,
+            category = ?,
+            updated_time = ?,
+            content = ?
+        WHERE 
+            content_idx = ?
         """
 
         self.SQL_DELETE_CONTENT = jinja2.Template("""
@@ -103,6 +116,7 @@ class DBController:
                 CONTENT.title, 
                 CONTENT.category, 
                 CONTENT.created_time, 
+                CONTENT.updated_time,
                 CONTENT.content,
                 CONTENT.view_count,
                 USER.user_id 
@@ -113,6 +127,7 @@ class DBController:
                         title, 
                         category, 
                         created_time, 
+                        updated_time,
                         content,
                         view_count
                 FROM CONTENT_TABLE
@@ -137,7 +152,8 @@ class DBController:
                  CONTENT.user_idx, 
                  CONTENT.title, 
                  CONTENT.category, 
-                 CONTENT.created_time, 
+                 CONTENT.created_time,
+                 CONTENT.updated_time, 
                  CONTENT.content,
                  CONTENT.view_count,
                  USER.user_id                                                                   
@@ -147,6 +163,7 @@ class DBController:
                         title, 
                         category, 
                         created_time, 
+                        updated_time,
                         content,
                         view_count
                 FROM CONTENT_TABLE
@@ -172,7 +189,7 @@ class DBController:
 
         self.SQL_UPDATE_CONTENT_VIEW_COUNT = jinja2.Template("""
         UPDATE CONTENT_TABLE
-        SET view_count = {{view_count}}
+        SET view_count = view_count + 1
         WHERE 1=1
             AND content_idx = {{content_idx}}                                             
         """)
@@ -306,7 +323,8 @@ class DBController:
                     user_idx:int,
                     title:str, 
                     category:str,
-                    created_time:datetime,
+                    created_time:str,
+                    updated_time:str,
                     content:str):
         SQL = self.SQL_PUSH_CONTENT
         with sqlite3.connect(str(self.db_path)) as conn:
@@ -316,9 +334,26 @@ class DBController:
                                 user_idx,
                                 title,
                                 category,
-                                created_time.strftime("%Y%m%d%H%M%S"),
+                                created_time,
+                                updated_time,
                                 content,
                                 view_cnt))
+            conn.commit()
+
+    def update_content(self, 
+                       content_idx:int,
+                       title:str,
+                       category:str,
+                       updated_time:str,
+                       content:str):
+        SQL = self.SQL_UPDATE_CONTENT
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL,(title,
+                                category,
+                                updated_time,
+                                content,
+                                content_idx))
             conn.commit()
 
     def get_max_content_idx(self)->int:
@@ -344,13 +379,14 @@ class DBController:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
-            for content_idx,user_idx,title,category,created_time,content,view_count,user_id in cursor.execute(SQL):
+            for content_idx,user_idx,title,category,created_time,updated_time,content,view_count,user_id in cursor.execute(SQL):
                 rst.append({
                             'content_idx':content_idx,
                             'user_idx':user_idx,
                             'title':title,
                             'category':category,
                             'created_time':created_time,
+                            'updated_time':updated_time,
                             'content':content,
                             'view_count':view_count,
                             'user_id':user_id
@@ -365,6 +401,7 @@ class DBController:
                     'title':title,
                     'category':category,
                     'created_time':created_time,
+                    'updated_time':created_time,
                     'content':content,
                     'user_id':user_id
                 }
@@ -373,13 +410,14 @@ class DBController:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
-            for content_idx,user_idx,title,category,created_time,content,view_count,user_id in cursor.execute(SQL):
+            for content_idx,user_idx,title,category,created_time,updated_time,content,view_count,user_id in cursor.execute(SQL):
                 rst.append({
                             'content_idx':content_idx,
                             'user_idx':user_idx,
                             'title':title,
                             'category':category,
                             'created_time':created_time,
+                            'updated_time':updated_time,
                             'content':content,
                             'view_count':view_count,
                             'user_id':user_id
@@ -409,9 +447,7 @@ class DBController:
             return rst
         
     def add_one_content_view_count(self,content_idx:int):
-        view_count = self.get_content_view_count(content_idx)
-        new_view_count = view_count + 1
-        SQL = self.SQL_UPDATE_CONTENT_VIEW_COUNT.render(**{'content_idx':content_idx,'view_count':new_view_count})
+        SQL = self.SQL_UPDATE_CONTENT_VIEW_COUNT.render(**{'content_idx':content_idx})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             cursor.execute(SQL)
@@ -502,7 +538,7 @@ class DBController:
         SQL = self.SQL_FIND_IMAGE_WITH_CONTENT_IDX.render(**{'content_idx':content_idx})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
-            return [filename for filename in cursor.execute(SQL)]
+            return [filename[0] for filename in cursor.execute(SQL)]
 
     def delete_image_with_content_idx(self,content_idx:int)->list[str]:
         SQL = self.SQL_DELETE_IMAGE_WITH_CONTENT_IDX.render(**{'content_idx':content_idx})

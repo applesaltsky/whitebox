@@ -45,7 +45,8 @@
                     </form>
                     <form action="/content" method="get">
                         <div>
-                            <button type="submit">write content</button>
+                            <input style="display:none" name="content_idx" value="{{content['content_idx']}}" readonly></input>
+                            <button type="submit">update content</button>
                         </div>
                     </form>
                     {% if user_info['user_idx'] == content['user_idx'] or user_info['previlage'] == 'admin' %}
@@ -87,6 +88,7 @@
                 <span> user_id : {{content['user_id']}} </span> 
                 <span> view_count : {{content['view_count']}} </span>
                 <span> created_time : {{content['created_time']}} </span> 
+                <span> updated_time : {{content['updated_time']}} </span> 
             </div>
             <div id='content'>   
             </div>

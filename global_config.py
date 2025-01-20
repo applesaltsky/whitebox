@@ -11,7 +11,6 @@ def is_windows():
 
 class GlobalConfig:
     def __init__(self):
-        self.PORT = 5000
         self.PATH_APP_PY =  Path(__file__)
         self.PATH_PROJECT = self.PATH_APP_PY.parent
         self.PATH_DB = Path(self.PATH_PROJECT,'databases','main.db')
@@ -24,7 +23,24 @@ class GlobalConfig:
         self.PATH_JAVASCRIPT = Path(self.PATH_STATIC,'js')
         self.PATH_CSS = Path(self.PATH_STATIC,'css')
         self.PATH_IMAGE = Path(self.PATH_STATIC,'images')
+        if not os.path.exists(self.PATH_IMAGE):
+            os.makedirs(self.PATH_IMAGE)
+
+        folders = [
+                    self.PATH_DB.parent, 
+                    self.PATH_TEMPLATES, 
+                    self.PATH_STATIC,
+                    self.PATH_JAVASCRIPT,
+                    self.PATH_CSS,
+                    self.PATH_IMAGE
+                   ]
+         
+        for folder in folders:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
         self.time_server_started = datetime.now()
+        self.time_format = "%Y-%m-%d %H:%M:%S"
         self.reload = False
         if is_windows():
             self.reload = True
@@ -35,6 +51,8 @@ class GlobalConfig:
 
         self.admin_id = os.getenv("ADMIN_ID")
         self.admin_pw = os.getenv("ADMIN_PW")
+
+        self.PORT = 5000
          
 
 global_config = GlobalConfig()
