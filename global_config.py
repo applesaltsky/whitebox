@@ -45,12 +45,16 @@ class GlobalConfig:
         if is_windows():
             self.reload = True
 
+        #Delete unused image function is executed every {self.cycle_delete_unused_image} requests.
+        self.cycle_delete_unused_image = 1000
+
         self.max_session_age = 3600 * 12  #sec 
 
         self.category_list = ['DataProcessing','Backend','ComputerScience']
 
         self.admin_id = os.getenv("ADMIN_ID")
         self.admin_pw = os.getenv("ADMIN_PW")
+
 
         self.PORT = 5000
          

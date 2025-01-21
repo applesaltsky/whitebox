@@ -92,12 +92,58 @@
             </div>
             <div id='content'>   
             </div>
+            {% if user_info %}
+                <form action="/comment/{{content['content_idx']}}" method="post" >
+                    <div style="margin-top:5px; text-align:center;">
+                        <input style="display:none" type="text" name="user_idx" value="{{user_info['user_idx']}}"></input>
+                        <textarea style="width:95%" rows="3" type="text" name="comment"></textarea>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end">
+                        <div style="width:2.5%"></div>
+                        <button type="submit">send comment</button>
+                        <div style="width:2.5%"></div>
+                    </div>
+                </form>
+            {% endif %}
+            {% for comment in comment_list %}
+                <form action="/delete/comment/{{comment['comment_idx']}}" method="post">
+                    <div style="display:flex;margin-top:10px;padding-top:10px;border-top:1px solid black">
+                        <div style="width:80%">
+                            {{comment['user_id']}} : {{comment['created_time']}}
+                        </div>
+                        <div style="width:20%; text-align: right;">
+                            {% if user_info['user_idx'] == comment['user_idx'] %}
+                                <button type="submit"> delete </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="margin-top:5px">
+                        {{comment['comment']}}
+                    </div>
+                </form>
+            {% endfor %}
         </div>
     </div>
-
-
-    <script src="/js/marked.min.js"></script>
+    <link rel="stylesheet" href="/css/highlights.default.min.css">
+    <script src="/js/marked.umd.js"></script>
+    <script src="/js/marked-highlight.index.umd.js"></script>
+    <script src="/js/highlight.min.js"></script>
+    <script src="/js/highlight.python.min.js"></script>
     <script>
+        const { Marked } = globalThis.marked;
+        const { markedHighlight } = globalThis.markedHighlight;
+
+        const marked = new Marked(
+            markedHighlight({
+                emptyLangClass: 'hljs',
+                langPrefix: 'hljs language-',
+                highlight(code, lang, info) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+                }
+            })
+            );
+
         const markdownInput = `
 
 {{content['content']}}

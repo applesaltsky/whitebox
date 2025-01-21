@@ -33,7 +33,7 @@ class DBController:
                 content_idx INTEGER NOT NULL,
                 user_idx INTEGER NOT NULL,
                 created_time TEXT NOT NULL,
-                content TEXT NOT NULL,
+                comment TEXT NOT NULL,
                 FOREIGN KEY (content_idx) REFERENCES ParentTable(content_idx) ON DELETE CASCADE
             )
         '''     
@@ -206,6 +206,20 @@ class DBController:
         FROM USER_TABLE
         """
 
+        self.SQL_GET_USER_WITH_USER_IDX = jinja2.Template("""
+        SELECT  user_idx,
+                user_id,
+                user_password,
+                user_find_password_question,
+                user_find_password_answer,
+                user_email,
+                created_time,
+                previlage
+        FROM USER_TABLE
+        WHERE 1=1
+            AND user_idx = {{user_idx}}
+        """)
+
         self.SQL_FIND_USER_WITH_ID = jinja2.Template("""
         SELECT user_idx,
                user_id,
@@ -278,6 +292,11 @@ class DBController:
         )
         """
 
+        self.SQL_GET_IMAGE_ALL = """
+        SELECT filename
+        FROM IMAGE_TABLE
+        """
+
         self.SQL_FIND_IMAGE_WITH_CONTENT_IDX = jinja2.Template("""
         SELECT filename
         FROM IMAGE_TABLE
@@ -303,6 +322,60 @@ class DBController:
             ?
         )
         """
+
+        self.SQL_GET_COMMENT = jinja2.Template("""
+        SELECT comment_idx,
+               content_idx,
+               user_idx,
+               created_time,
+               comment
+        FROM COMMENT_TABLE
+        WHERE 1=1
+            AND comment_idx = {{comment_idx}}
+        """)
+
+
+
+        self.SQL_GET_COMMENT_LIST_WITH_CONTENT_IDX = jinja2.Template("""
+        SELECT comment_idx,
+               content_idx,
+               user_idx,
+               created_time,
+               comment
+        FROM COMMENT_TABLE
+        WHERE 1=1
+            AND content_idx = {{content_idx}}
+        """)
+
+        self.SQL_GET_MAX_COMMENT_IDX = """
+        SELECT max(comment_idx)
+        FROM COMMENT_TABLE
+        """
+
+        self.SQL_PUSH_COMMENT = """
+        INSERT
+        INTO COMMENT_TABLE (
+            comment_idx,
+            content_idx,
+            user_idx,
+            created_time,
+            comment
+        )
+        VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+        )
+        """
+
+        self.SQL_DELETE_COMMENT = jinja2.Template("""
+        DELETE 
+        FROM COMMENT_TABLE
+        WHERE 1=1
+            AND comment_idx = {{comment_idx}}
+        """)
         
 
     def init_db(self,db_path:Path|str):
@@ -361,10 +434,11 @@ class DBController:
         return integer
         if content table is empty, return -1
         '''
+        SQL = self.SQL_MAX_CONTENT_IDX
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
 
-            for i in cursor.execute(self.SQL_MAX_CONTENT_IDX):
+            for i in cursor.execute(SQL):
                 rst = i[0]
                 break
 
@@ -392,6 +466,7 @@ class DBController:
                             'user_id':user_id
                             })
             return rst
+        
                    
     def get_content(self,content_idx:int)->dict:
         """
@@ -499,7 +574,27 @@ class DBController:
                 break
             return rst      
         
-               
+    def get_user_with_user_idx(self,user_idx:int):
+        SQL = self.SQL_GET_USER_WITH_USER_IDX.render(**{'user_idx':user_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()  
+            rst = []
+            for user_idx, user_id, user_password, user_find_password_question, user_find_password_answer, user_email, created_time, previlage in cursor.execute(SQL):
+                rst.append({
+                            'user_idx':user_idx,
+                            'user_id':user_id,
+                            'user_password':user_password,
+                            'user_find_password_question':user_find_password_question,
+                            'user_find_password_answer':user_find_password_answer,
+                            'user_email':user_email,
+                            'created_time':created_time,
+                            'previlage':previlage
+                            })
+            if len(rst) == 0:
+                return None
+            else:
+                return rst[0]
+              
     def get_user_list(self,init_row_idx=None,row_count=None):
         SQL = self.SQL_GET_ALL_USER
         with sqlite3.connect(str(self.db_path)) as conn:
@@ -534,6 +629,12 @@ class DBController:
                             )
             conn.commit()
 
+    def get_image_all(self)->list[str]:
+        SQL = self.SQL_GET_IMAGE_ALL
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            return [filename[0] for filename in cursor.execute(SQL)]
+
     def get_image_with_content_idx(self,content_idx:int)->list[str]:
         SQL = self.SQL_FIND_IMAGE_WITH_CONTENT_IDX.render(**{'content_idx':content_idx})
         with sqlite3.connect(str(self.db_path)) as conn:
@@ -552,9 +653,77 @@ class DBController:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             cursor.execute(SQL,(filename, content_idx))
-            conn.commit()        
+            conn.commit()    
 
-        
+    def delete_comment(self, comment_idx:int):
+        SQL = self.SQL_DELETE_COMMENT.render(**{'comment_idx':comment_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL)
+            conn.commit() 
+
+    def get_max_comment_idx(self)->int:
+        SQL = self.SQL_GET_MAX_COMMENT_IDX
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+
+            for i in cursor.execute(SQL):
+                rst = i[0]
+                break
+
+            NO_CONTENT = rst is None
+            if NO_CONTENT:
+                return -1
+            else:
+                return rst
+            
+    def get_comment(self,comment_idx:int)->dict|None:
+        SQL = self.SQL_GET_COMMENT.render(**{'comment_idx':comment_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            rst = []
+            for comment_idx, content_idx, user_idx, created_time, comment in cursor.execute(SQL):
+                rst.append({'comment_idx':comment_idx,
+                            'content_idx':content_idx,
+                            'user_idx':user_idx,
+                            'created_time':created_time,
+                            'comment':comment
+                           })
+            if len(rst) == 0:
+                return None
+            else:
+                return rst[0]
+            
+    def get_comment_with_content_idx(self,content_idx:int)->list[dict]:
+        SQL = self.SQL_GET_COMMENT_LIST_WITH_CONTENT_IDX.render(**{'content_idx':content_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            rst = []
+            for comment_idx, content_idx, user_idx, created_time, comment in cursor.execute(SQL):
+                rst.append({'comment_idx':comment_idx,
+                            'content_idx':content_idx,
+                            'user_idx':user_idx,
+                            'created_time':created_time,
+                            'comment':comment
+                           })
+            return rst
+
+    def push_comment(self,
+                     comment_idx:int,
+                     content_idx:int,
+                     user_idx:int,
+                     created_time:str,
+                     comment:str):
+        SQL = self.SQL_PUSH_COMMENT
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL,(comment_idx, 
+                                content_idx,
+                                user_idx,
+                                created_time,
+                                comment))
+            conn.commit()  
+
             
 
 

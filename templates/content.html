@@ -185,8 +185,26 @@
             </div>
         </div> 
     </div>
-    <script src="/js/marked.min.js"></script>
+    <link rel="stylesheet" href="/css/highlights.default.min.css">
+    <script src="/js/marked.umd.js"></script>
+    <script src="/js/marked-highlight.index.umd.js"></script>
+    <script src="/js/highlight.min.js"></script>
+    <script src="/js/highlight.python.min.js"></script>
     <script>
+        const { Marked } = globalThis.marked;
+        const { markedHighlight } = globalThis.markedHighlight;
+
+        const marked = new Marked(
+            markedHighlight({
+                emptyLangClass: 'hljs',
+                langPrefix: 'hljs language-',
+                highlight(code, lang, info) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+                }
+            })
+            );
+
         const update_viewframe = ()=>{
             const input_title = document.getElementById("title").value;
 

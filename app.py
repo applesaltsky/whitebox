@@ -12,7 +12,11 @@ from datetime import datetime
 from pathlib import Path
 from io import BytesIO
 from PIL import Image
+from threading import Lock
 import time,re,os
+
+
+
 
 #init session control
 session_controller = SessionController()
@@ -113,7 +117,30 @@ async def confirm_admin_client_session(request:Request, call_next):
     response = await call_next(request)
     return response
 
+request_counter = 0
+lock = Lock()
+def delete_unused_image():
+    list_used_image = db_controller.get_image_all()
+    list_stored_image = os.listdir(global_config.PATH_IMAGE)
+    for image in list_stored_image:
+        if image not in list_used_image:
+            os.remove(Path(global_config.PATH_IMAGE,image))
+    
+@app.middleware('http')
+async def request_counter_middleware(request:Request, call_next):
+    global request_counter
+    MAX_REQUEST_COUNTER = 1024 * 1024
 
+    response = await call_next(request)
+
+    with lock:
+        request_counter += 1
+        if request_counter % global_config.cycle_delete_unused_image == 0:
+            delete_unused_image()
+
+        if request_counter >= MAX_REQUEST_COUNTER:
+            request_counter = 0
+    return response
 
 #set routing
 @app.get('/')
@@ -192,23 +219,15 @@ def submit_content_request_handler(title:str = Form(default='test'),
             i:str = i + '.webp'
             img_files.append(i)
         return img_files
-    
-    def refresh_image_storage(new_img_list:list[str],old_img_list:list[str]):
-        for img in old_img_list:  #already stored image
-            is_deleted_image = img not in new_img_list
-            if is_deleted_image:
-                imagePath = Path(global_config.PATH_IMAGE,img)
-                if os.path.exists(imagePath):
-                    os.remove(imagePath)
-                else:
-                    print(f'refresh_image_storage failed, check this file, {img}')
-    
+       
     is_new_content = content_idx is None
     if is_new_content:  #push new content
         content_idx = db_controller.get_max_content_idx()+1
         img_list = get_image_list(content)
+
         for img in img_list:
             db_controller.push_image(img,content_idx)
+
         created_time = datetime.now().strftime(global_config.time_format)
         db_controller.push_content(content_idx = content_idx, 
                                user_idx = user_info['user_idx'], 
@@ -221,17 +240,16 @@ def submit_content_request_handler(title:str = Form(default='test'),
     else:  #update content
         content_idx = content_idx
         img_list = get_image_list(content)
-        old_img_list = db_controller.get_image_with_content_idx(content_idx)
-        refresh_image_storage(img_list,old_img_list)
 
         db_controller.delete_image_with_content_idx(content_idx)
         for img in img_list:
             db_controller.push_image(img,content_idx)
-        
+
+        updated_time = datetime.now().strftime(global_config.time_format)
         db_controller.update_content(content_idx=content_idx,
                                      title=title,
                                      category=category,
-                                     updated_time=datetime.now().strftime(global_config.time_format),
+                                     updated_time=updated_time,
                                      content=content)
 
     
@@ -247,19 +265,30 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     content = db_controller.get_content(content_idx)
     content['content'] = content['content'].replace("`","\`")
     user_info = session_controller.get_session(session_id)
-    body = jinja2.Template(body).render(**{'content':content,'user_info':user_info})
+    comment_list = db_controller.get_comment_with_content_idx(content_idx)
+
+    comment_list_tmp = []
+    for comment in comment_list:
+        comment_user_info = db_controller.get_user_with_user_idx(comment['user_idx'])
+        comment['user_id'] = comment_user_info['user_id']
+        comment_list_tmp.append(comment)
+
+    comment_list = comment_list_tmp
+    body = jinja2.Template(body).render(**{'content':content,
+                                           'user_info':user_info,
+                                           'comment_list':comment_list})
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/delete/content/{content_idx:int}')
-def delete_content(content_idx:int,session_id:str=Cookie(default='-')):
+def delete_content(content_idx:int,session_id:str|None=Cookie(default=None)):
     user_info = session_controller.get_session(session_id)
     
     not_login_client = user_info is None
     if not_login_client:
         status_code = 303 #see other
-        return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
+        return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
     content = db_controller.get_content(content_idx)
 
@@ -267,13 +296,27 @@ def delete_content(content_idx:int,session_id:str=Cookie(default='-')):
     login_user_is_not_author = user_info['user_idx'] != content['user_idx']
     if login_user_is_not_author and user_is_not_admin:
         status_code = 303 #see other
-        return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
+        return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
+    db_controller.delete_image_with_content_idx(content_idx)
     db_controller.delete_content(content_idx)
     status_code = 303 #see other
     return RedirectResponse('/',status_code=status_code)
     
-    
+@app.post('/delete/comment/{comment_idx:int}')
+def delete_comment(comment_idx:int,session_id:str|None=Cookie(default=None)):
+    comment = db_controller.get_comment(comment_idx)
+    user_info = session_controller.get_session(session_id)
+    content_idx = comment['content_idx']
+
+    auth_failed = user_info['user_idx'] != comment['user_idx']
+    if auth_failed:
+        status_code = 303 #see other
+        return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
+
+    db_controller.delete_comment(comment_idx)
+    status_code = 303 #see other
+    return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
 
 
@@ -346,6 +389,28 @@ def submit_user_request_handler(user_id:str=Form(default='-'),
                             previlage='user')
     status_code = 303  #see other
     return RedirectResponse(url='/login', status_code=status_code)
+
+@app.post('/comment/{content_idx:int}')
+def push_comment(content_idx:int, 
+                 user_idx:int|None=Form(default=None),
+                 comment:str|None=Form(default=None),
+                 session_id:str=Cookie(default='-')
+                 ):
+    user_info = session_controller.get_session(session_id)
+    not_login_client = user_info is None
+    if not_login_client:
+        status_code = 303 #see other
+        return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
+    created_time = datetime.now().strftime(global_config.time_format)
+    comment_idx = db_controller.get_max_comment_idx() + 1
+    db_controller.push_comment(comment_idx=comment_idx, 
+                               content_idx=content_idx,
+                               user_idx=user_idx,
+                               created_time=created_time,
+                               comment=comment)
+    status_code = 303 #see other
+    return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
+
 
 @app.get('/login')
 def serve_user_login_form(error_message:str = Query(default=' ')):
