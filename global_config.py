@@ -23,8 +23,6 @@ class GlobalConfig:
         self.PATH_JAVASCRIPT = Path(self.PATH_STATIC,'js')
         self.PATH_CSS = Path(self.PATH_STATIC,'css')
         self.PATH_IMAGE = Path(self.PATH_STATIC,'images')
-        if not os.path.exists(self.PATH_IMAGE):
-            os.makedirs(self.PATH_IMAGE)
 
         folders = [
                     self.PATH_DB.parent, 
@@ -47,6 +45,8 @@ class GlobalConfig:
 
         #Delete unused image function is executed every {self.cycle_delete_unused_image} requests.
         self.cycle_delete_unused_image = 1000
+
+        self.write_content_previlage = ['admin','user']  #'admin', 'user'
 
         self.max_session_age = 3600 * 12  #sec 
 

@@ -1,5 +1,3 @@
-from session_control import SessionController
-
 class Checker:
     """
     all method of checker should return boolean
@@ -10,7 +8,8 @@ class Checker:
     def is_login_client(self,session_id:dict|None)->bool:
         return session_id is not None
 
-    def is_valid_session_id(self,session_controller:SessionController, 
+    def is_valid_session_id(self,
+                                session_controller, 
                                 session_id:dict|None)->bool:
         user_info = session_controller.get_session(session_id)
         return user_info is not None
@@ -28,3 +27,4 @@ class Checker:
     
     def is_valid_user_info(self,user_info:dict|None)->bool:
         return user_info is not None
+    

@@ -1,18 +1,21 @@
-#get global config
+#import internal class
 from global_config import GlobalConfig
 from global_db_control import DBController
 from session_control import SessionController
 from util import Checker
 
+#import external package
 from fastapi import FastAPI, Response, Request, Form, Query, Cookie, UploadFile
 from fastapi.responses import RedirectResponse
+from PIL import Image
 import uvicorn, jinja2, psutil
 
+
+#import standard package
 from uuid import uuid4
 from datetime import datetime
 from pathlib import Path
 from io import BytesIO
-from PIL import Image
 from threading import Lock
 import time,re,os
 
