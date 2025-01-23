@@ -15,7 +15,7 @@ class SessionController:
                       }
         self.session_db.append(new_session)
 
-    def del_old_session(self,max_age:int):
+    def delete_old_session(self,max_age:int):
         def is_alived_session(session):
             expired_time = session['created_time'] + timedelta(seconds=max_age)
             return expired_time > datetime.now()
@@ -27,7 +27,7 @@ class SessionController:
                 return session['user_info']
         return None
     
-    def del_session(self,session_id:str):
+    def delete_session(self,session_id:str):
         filter_session = lambda session:session['session_id']!=session_id
         self.session_db = list(filter(filter_session,self.session_db))
 

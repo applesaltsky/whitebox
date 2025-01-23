@@ -1,0 +1,15 @@
+#content_view_info {
+    text-align : right;
+}
+
+#content_view_info span {
+    margin-left : 10px;
+}
+
+#content_view_content {
+    text-align: left;       
+    border-top: 1px solid black;  
+    border-bottom : 1px solid black;
+    padding : 20px;
+    margin-top:10px;
+}

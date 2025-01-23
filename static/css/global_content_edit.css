@@ -1,0 +1,60 @@
+#content_edit_title {
+    margin-top:5px;
+    display : flex;
+}
+
+#content_edit_title #content_edit_title_key {
+    width:20%;
+}
+
+#content_edit_title #content_edit_title_value {
+    width: 80%;
+}
+
+#content_edit_title #content_edit_title_value input {
+    width: 100%;
+}
+
+#content_edit_category {
+    margin-top:5px;
+    display : flex;
+}
+
+#content_edit_category #content_edit_category_key {
+    width:20%;
+}
+
+#content_edit_category #content_edit_category_value {
+    width:80%;
+}
+
+#content_edit_category #content_edit_category_value label {
+    margin-right : 5px;
+}
+
+#content_edit_category #content_edit_category_value input {
+    margin-right : 10px;
+}
+
+#content_edit_image {
+    margin-top:5px;
+    display : flex;
+}
+
+#content_edit_main {
+    margin-top:5px;
+    width : 100%;
+}
+
+#content_edit_main #content_edit_main_textarea {
+    width : 100%;
+}
+
+#content_edit_submit {
+    margin-top:5px;
+    width : 100%;
+}
+
+#content_edit_submit button {
+    width : 100%;
+}

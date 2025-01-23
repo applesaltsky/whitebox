@@ -5,27 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간단한 양식</title>
     <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
+    <link rel="stylesheet" href="/css/global_content_view.css" type="text/css"></link>
     <style>
         #mainframe {
             width : 800px;
         }
-
-        #content_info {
-            text-align : right;
-        }
-
-        #content_info span {
-            margin-left : 10px;
-        }
-
-        #content {
-            text-align: left;       
-            border-top: 1px solid black;  
-            border-bottom : 1px solid black;
-            padding : 20px;
-            margin-top:10px;
-        }
-
     </style>
 </head>
 <body>
@@ -84,13 +68,13 @@
         </div>
         <h1 id='title_view'> {{content['title']}} </h1>
         <div id='view'>
-            <div id='content_info'>  
+            <div id='content_view_info'>  
                 <span> user_id : {{content['user_id']}} </span> 
                 <span> view_count : {{content['view_count']}} </span>
                 <span> created_time : {{content['created_time']}} </span> 
                 <span> updated_time : {{content['updated_time']}} </span> 
             </div>
-            <div id='content'>   
+            <div id='content_view_content'>   
             </div>
             {% if user_info %}
                 <form action="/comment/{{content['content_idx']}}" method="post" >
@@ -129,6 +113,12 @@
     <script src="/js/marked-highlight.index.umd.js"></script>
     <script src="/js/highlight.min.js"></script>
     <script src="/js/highlight.python.min.js"></script>
+    <script src="/js/highlight.c.min.js"></script>
+    <script src="/js/highlight.cpp.min.js"></script>
+    <script src="/js/highlight.go.min.js"></script>
+    <script src="/js/highlight.java.min.js"></script>
+    <script src="/js/highlight.javascript.min.js"></script>
+    <script src="/js/highlight.rust.min.js"></script>
     <script>
         const { Marked } = globalThis.marked;
         const { markedHighlight } = globalThis.markedHighlight;
@@ -144,13 +134,17 @@
             })
             );
 
+        marked.use({
+                breaks:true
+            });
+
         const markdownInput = `
 
 {{content['content']}}
         
         `;
         console.log(markdownInput);
-        const markdownOutput = document.getElementById('content');
+        const markdownOutput = document.getElementById('content_view_content');
         markdownOutput.innerHTML = 
             marked.parse(markdownInput);
     </script>

@@ -59,9 +59,9 @@ def add_logger(request:Request, call_next):
     return response
 
 @app.middleware('http')
-def del_old_session(request:Request, call_next):
+def delete_old_session(request:Request, call_next):
     #print(session_controller.session_db)
-    session_controller.del_old_session(max_age=global_config.max_session_age)
+    session_controller.delete_old_session(max_age=global_config.max_session_age)
     response = call_next(request)
     return response
 
@@ -411,7 +411,6 @@ def push_comment(content_idx:int,
     status_code = 303 #see other
     return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
-
 @app.get('/login')
 def serve_user_login_form(error_message:str = Query(default=' ')):
     template = 'login.html'
@@ -450,7 +449,7 @@ def user_logout_requests_handler(session_id:str = Cookie(default='-')):
     response.set_cookie(key='session_id',
                         value="-",
                         max_age=0)
-    session_controller.del_session(session_id)
+    session_controller.delete_session(session_id)
     return response
 
 @app.post('/fs/upload/image')
@@ -466,7 +465,7 @@ def upload_image(image:UploadFile|None = Form(default=None)):
         headers = {'Content-Type':'text/plain'}
         return Response(content=body, status_code=status_code, headers=headers)
     
-    accept = ['.jpg','.png','.jpeg','.webp']
+    accept = ['.jpg','.png','.jpeg','.webp','.gif']
     not_acceptable_extension = len(list(filter(lambda extension:extension in image.filename,accept))) == 0
     if not_acceptable_extension:
         body = 'image extension should be .'

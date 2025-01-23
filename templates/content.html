@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간단한 양식</title>
     <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
-    <link rel="stylesheet" href="/css/global_input.css" type="text/css"></link>
-    <link rel="stylesheet" href="/css/global_table.css" type="text/css"></link>
+    <link rel="stylesheet" href="/css/global_content_view.css" type="text/css"></link>
+    <link rel="stylesheet" href="/css/global_content_edit.css" type="text/css"></link>
     <style>
         #mainframe {
             width : 2000px;
@@ -18,63 +18,13 @@
 
         #editframe {
             width : 50%;
+            padding:10px;
         }
 
         #viewframe {
             width : 50%;
             padding:10px;
         }
-
-        #user_input .user_input_form .user_input_form_category{
-            width : 20%;
-        }
-
-        #user_input .user_input_form .user_input_form_input{
-            width : 80%;
-            display : flex;
-        }
-
-        #user_input .user_input_content {
-            margin-top:10px;
-            padding-left:10px;
-        }
-
-        #user_input textarea{
-            width : 100%;
-        }
-
-        #title_viewframe {
-            text-align : center;
-        }
-
-        #content_info_viewframe {
-            margin-top : 30px;
-            text-align : right;
-        }
-
-        #content_info_viewframe span {
-            margin-left : 10px;
-        }
-
-        #content_viewframe {
-            text-align: left;       
-            border-top: 1px solid black;  
-            border-bottom : 1px solid black;
-            padding : 20px;
-            margin-top:10px;
-        }
-
-        .upload_button {
-            border-radius:5px;
-            border:1px solid #767676; 
-            text-align:center;
-            background-color: #efefef;
-        }
-
-        .upload_button:hover {
-            background-color: #e5e5e5;
-        }
-
     </style>
 </head>
 <body>
@@ -108,78 +58,75 @@
         </div>
         <div id='view'>
             <div id="editframe">
-                <div id='user_input'>
-                    <form action="/content" method="post">
-                        {% if content_idx != None %}
-                            <input style="display:none;" name="content_idx" area-label="content_idx" value="{{content_idx}}" readonly></input>
-                        {% endif %}
-                        <div class='user_input_form'> 
-                            <div class='user_input_form_category'>
-                                TITLE
-                            </div>
-                            <div class='user_input_form_input'>
-                                {% if content_idx != None %}
-                                    <input type="text" id="title" name="title" aria-label="title" value="{{content['title']}}" required></input>
-                                {% else %}
-                                    <input type="text" id="title" name="title" aria-label="title" value="EMPTY" required></input>
-                                {% endif %}
-                            </div> 
+                <form action="/content" method="post">
+                    {% if content_idx != None %}
+                        <input style="display:none;" name="content_idx" area-label="content_idx" value="{{content_idx}}" readonly></input>
+                    {% endif %}
+                    <div id = "content_edit_title">
+                        <div id = 'content_edit_title_key'>
+                            TITLE
                         </div>
-                        <div class='user_input_form'> 
-                            <div class='user_input_form_category'>
-                                CATEGORY
-                            </div>
-                            <div class='user_input_form_input'>
-                                {% if content_idx != None %}
-                                    {% for category in category_list %}
-                                        {% if category == content['category'] %}
-                                            <label for="{{category}}">{{category}}</label>
-                                            <input type="radio" id="{{category}}" name="category" value="{{category}}" required checked>
-                                        {% else %}
-                                            <label for="{{category}}">{{category}}</label>
-                                            <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
-                                        {% endif %}
-                                    {% endfor %}     
-                                {% else %}
-                                    {% for category in category_list %}
-                                    <label for="{{category}}">{{category}}</label>
-                                    <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
-                                    {% endfor %}
-                                {% endif %}
-                                
-                            </div>
-                        </div>
-                        <div class='user_input_form'> 
-                            <div style="width:40%; display:flex;">
-                                <input type="file" id="imageInput" accept=".jpg, .jpeg, .png, .webp"/>
-                                <div id='upload_image_button' class='upload_button' style='width:50%'> upload image </div>
-                            </div>
-                            <div>
-
-                            </div>
-                        </div>
-                        <div class='user_input_content'>
+                        <div id = 'content_edit_title_value'>
                             {% if content_idx != None %}
-                                <textarea id="content" name="content" rows="20" aria-label="content" required>{{content['content']}}</textarea>
+                                <input type="text" id="title" name="title" aria-label="title" value="{{content['title']}}" required></input>
                             {% else %}
-                                <textarea id="content" name="content" rows="20" aria-label="content" required>## you can write content with markdown and html tag on this place!</textarea>
+                                <input type="text" id="title" name="title" aria-label="title" value="EMPTY" required></input>
                             {% endif %}
+                        </div> 
+                    </div>
+                    <div id = "content_edit_category">
+                        <div id = 'content_edit_category_key'>
+                            CATEGORY
                         </div>
-                        <div class='user_input_submit'>
-                            <button type="submit">전송</button>
+                        <div id ='content_edit_category_value'>
+                            {% if content_idx != None %}
+                                {% for category in category_list %}
+                                    {% if category == content['category'] %}
+                                        <label for="{{category}}">{{category}}</label>
+                                        <input type="radio" id="{{category}}" name="category" value="{{category}}" required checked>
+                                    {% else %}
+                                        <label for="{{category}}">{{category}}</label>
+                                        <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                                    {% endif %}
+                                {% endfor %}     
+                            {% else %}
+                                {% for category in category_list %}
+                                <label for="{{category}}">{{category}}</label>
+                                <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                                {% endfor %}
+                            {% endif %} 
                         </div>
-                    </form>
-                </div>
+                    </div>
+                    <div id = "content_edit_image" >
+                        <div id = "content_edit_image" >
+                            <input type="file" id="content_edit_image_select" accept=".jpg, .jpeg, .png, .gif, .webp"/>
+                            <div id='content_edit_image_submit' class='upload_button' style='width:50%'> upload image </div>
+                        </div>
+                        <div>
+    
+                        </div>
+                    </div>
+                    <div id ='content_edit_main'>
+                        {% if content_idx != None %}
+                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>{{content['content']}}</textarea>
+                        {% else %}
+                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>## you can write content with markdown and html tag on this place!</textarea>
+                        {% endif %}
+                    </div>
+                    <div id = 'content_edit_submit'>
+                        <button type="submit">전송</button>
+                    </div>
+                </form>
             </div>
             <div id="viewframe">
-                <h1 id='title_viewframe'> EMPTY </h1>
-                <div id='content_info_viewframe'>  
+                <h1 id='content_view_title'> EMPTY </h1>
+                <div id='content_view_info'>  
                     <span> user_id : {{user_info['user_id']}} </span> 
                     <span> view_count : {{view_count}} </span>
                     <span> created_time : {{created_time}} </span> 
                     <span> updated_time : {{updated_time}} </span>
                 </div>
-                <div id='content_viewframe'>   
+                <div id='content_view_content'>   
                     empty!
                 </div>
             </div>
@@ -190,6 +137,12 @@
     <script src="/js/marked-highlight.index.umd.js"></script>
     <script src="/js/highlight.min.js"></script>
     <script src="/js/highlight.python.min.js"></script>
+    <script src="/js/highlight.c.min.js"></script>
+    <script src="/js/highlight.cpp.min.js"></script>
+    <script src="/js/highlight.go.min.js"></script>
+    <script src="/js/highlight.java.min.js"></script>
+    <script src="/js/highlight.javascript.min.js"></script>
+    <script src="/js/highlight.rust.min.js"></script>
     <script>
         const { Marked } = globalThis.marked;
         const { markedHighlight } = globalThis.markedHighlight;
@@ -204,14 +157,18 @@
                 }
             })
             );
+        
+        marked.use({
+                breaks:true
+            });
 
         const update_viewframe = ()=>{
             const input_title = document.getElementById("title").value;
 
-            document.getElementById("title_viewframe").innerText = input_title;
+            document.getElementById("content_view_title").innerText = input_title;
 
             const markdownInput = document.getElementById("content").value
-            const markdownOutput = document.getElementById('content_viewframe');
+            const markdownOutput = document.getElementById('content_view_content');
             markdownOutput.innerHTML = marked.parse(markdownInput);
         };
         document.getElementById("title").addEventListener('input',update_viewframe);

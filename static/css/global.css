@@ -46,4 +46,13 @@ body {
     margin-top : 30px;
 }
 
+.upload_button {
+    border-radius:5px;
+    border:1px solid #767676; 
+    text-align:center;
+    background-color: #efefef;
+}
 
+.upload_button:hover {
+    background-color: #e5e5e5;
+}
