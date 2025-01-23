@@ -173,7 +173,7 @@ def submit_content_form_handler(session_id:str = Cookie(default='-'),
     if not is_login_client:
         return RedirectResponse(url='/')
     
-    with open(Path(global_config.PATH_TEMPLATES,'content.html'),'rt',encoding='utf-8') as f:
+    with open(Path(global_config.PATH_TEMPLATES,'content_edit.html'),'rt',encoding='utf-8') as f:
         body = f.read()
 
 
@@ -285,7 +285,7 @@ def submit_content_request_handler(title:str = Form(default='test'),
 def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     db_controller.add_one_content_view_count(content_idx)
 
-    template = 'content__content_idx.html'
+    template = 'content_view.html'
     with open(Path(global_config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
 
