@@ -59,4 +59,3 @@ class GlobalConfig:
         self.PORT = 5000
          
 
-global_config = GlobalConfig()

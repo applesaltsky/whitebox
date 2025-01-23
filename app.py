@@ -1,7 +1,8 @@
 #get global config
-from global_config import global_config
+from global_config import GlobalConfig
 from global_db_control import DBController
 from session_control import SessionController
+from util import Checker
 
 from fastapi import FastAPI, Response, Request, Form, Query, Cookie, UploadFile
 from fastapi.responses import RedirectResponse
@@ -16,7 +17,9 @@ from threading import Lock
 import time,re,os
 
 
-
+#set global_config and utility func
+global_config = GlobalConfig()
+checker = Checker()
 
 #init session control
 session_controller = SessionController()
@@ -69,16 +72,18 @@ def delete_old_session(request:Request, call_next):
 @app.middleware('http')
 async def confirm_valid_client_session(request:Request, call_next):
     session_id = request.cookies.get('session_id')
-    login_client = session_id is not None
-    invalid_session = session_controller.get_session(session_id) is None
-    if login_client and invalid_session:
-        print(f'invalid client session : {session_id}')
-        response = RedirectResponse(url = '/')
-        response.set_cookie(key='session_id',
-                            value='-',
-                            max_age=0
-                            )
-        return response
+    is_login_client = checker.is_login_client(session_id)
+    is_valid_session_id = checker.is_valid_session_id(session_controller,session_id)
+    
+    if is_login_client:
+        if not is_valid_session_id:
+            print(f'invalid client session : {session_id}')
+            response = RedirectResponse(url = '/')
+            response.set_cookie(key='session_id',
+                                value='-',
+                                max_age=0
+                                )
+            return response
     
     response = await call_next(request)
     return response
@@ -86,21 +91,19 @@ async def confirm_valid_client_session(request:Request, call_next):
 
 @app.middleware('http')
 async def confirm_admin_client_session(request:Request, call_next):
-    url_path = request.url.path
-    admin_path = r'/admin/' in url_path
-    if not admin_path:
+    is_admin_url = checker.is_admin_url(request.url)
+    if not is_admin_url:
         response = await call_next(request)
         return response
 
     session_id = request.cookies.get('session_id')
-    login_client = session_id is not None
-    if not login_client:
+    is_login_client = checker.is_login_client(session_id)
+    if not is_login_client:
         response = RedirectResponse(url = '/')
         return response
 
-    user_info = session_controller.get_session(session_id)
-    invalid_session = user_info is None
-    if invalid_session:
+    is_valid_session_id = checker.is_valid_session_id(session_controller,session_id)
+    if is_valid_session_id:
         response = RedirectResponse(url = '/')
         response.set_cookie(key='session_id',
                             value='-',
@@ -108,9 +111,9 @@ async def confirm_admin_client_session(request:Request, call_next):
                             )
         return response
     
-    user_previlage = user_info['previlage']
-    admin_previlage = user_previlage == 'admin'
-    if not admin_previlage:
+    user_info = session_controller.get_session(session_id)
+    is_admin = checker.is_admin(user_info)
+    if not is_admin:
         response = RedirectResponse(url = '/')
         return response
         
@@ -163,27 +166,43 @@ def home_handler(session_id:str = Cookie(default='-'),category:str|None=Query(de
 
 
 @app.get('/content')
-def submit_content_form_handler(session_id:str = Cookie(default='-'),content_idx:int|None = Query(default=None)):
-    user_info = session_controller.get_session(session_id)
-    if user_info is None:
+def submit_content_form_handler(session_id:str = Cookie(default='-'),
+                                content_idx:int|None = Query(default=None)):
+    
+    is_login_client = checker.is_login_client(session_id)
+    if not is_login_client:
         return RedirectResponse(url='/')
     
     with open(Path(global_config.PATH_TEMPLATES,'content.html'),'rt',encoding='utf-8') as f:
         body = f.read()
-    view_count = 0
-    created_time = datetime.now().strftime(global_config.time_format) 
-    updated_time = created_time
-    content = None
-    if content_idx is not None:
+
+
+    user_info = session_controller.get_session(session_id)
+
+    create_content = content_idx is None
+    update_content = content_idx is not None
+
+    if create_content:
+        content_idx = None
+        content = None
+        view_count = 0
+        created_time = datetime.now().strftime(global_config.time_format) 
+        updated_time = created_time
+
+    #to update content, user is author or admin. else, user cannot update content.
+    if update_content:
+        content_idx = content_idx
         content = db_controller.get_content(content_idx)
-        is_author = content['user_idx'] == user_info['user_idx']
-        is_admin = user_info['previlage'] == 'admin'
+
+        is_author = checker.is_author(content,user_info)
+        is_admin = checker.is_admin(user_info)
         if is_author or is_admin:
             view_count = content['view_count']
             created_time = content['created_time']
             updated_time = datetime.now().strftime(global_config.time_format) 
-        else:
-            content_idx = None
+        else:  
+            return RedirectResponse(url='/')
+
     body = jinja2.Template(body).render(**{
                                            "content_idx":content_idx,
                                            'content':content,
@@ -204,9 +223,11 @@ def submit_content_request_handler(title:str = Form(default='test'),
                                    content:str = Form(default='test'),
                                    session_id:str = Cookie(default='-'),
                                    content_idx:int|None = Form(default=None)):
-    user_info = session_controller.get_session(session_id)
-    if user_info is None:
+    
+    is_login_client = checker.is_login_client(session_id)
+    if not is_login_client:
         return RedirectResponse(url='/')
+    
     
     def get_image_list(content:str)->list[str]:
         pattern = '<img src="/image/.*/>'
@@ -219,9 +240,13 @@ def submit_content_request_handler(title:str = Form(default='test'),
             i:str = i + '.webp'
             img_files.append(i)
         return img_files
-       
-    is_new_content = content_idx is None
-    if is_new_content:  #push new content
+    
+    user_info = session_controller.get_session(session_id)
+
+    create_content = content_idx is None
+    update_content = content_idx is not None
+    
+    if create_content:  
         content_idx = db_controller.get_max_content_idx()+1
         img_list = get_image_list(content)
 
@@ -237,7 +262,7 @@ def submit_content_request_handler(title:str = Form(default='test'),
                                updated_time = created_time,
                                content = content)
 
-    else:  #update content
+    if update_content:  #update content
         content_idx = content_idx
         img_list = get_image_list(content)
 
@@ -259,9 +284,11 @@ def submit_content_request_handler(title:str = Form(default='test'),
 @app.get('/content/{content_idx:int}')
 def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     db_controller.add_one_content_view_count(content_idx)
+
     template = 'content__content_idx.html'
     with open(Path(global_config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
+
     content = db_controller.get_content(content_idx)
     content['content'] = content['content'].replace("`","\`")
     user_info = session_controller.get_session(session_id)
@@ -270,7 +297,7 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     comment_list_tmp = []
     for comment in comment_list:
         comment_user_info = db_controller.get_user_with_user_idx(comment['user_idx'])
-        comment['user_id'] = comment_user_info['user_id']
+        comment['user_id'] = comment_user_info['user_id'] #push user id to each comment
         comment_list_tmp.append(comment)
 
     comment_list = comment_list_tmp
@@ -283,18 +310,19 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
 
 @app.post('/delete/content/{content_idx:int}')
 def delete_content(content_idx:int,session_id:str|None=Cookie(default=None)):
-    user_info = session_controller.get_session(session_id)
     
-    not_login_client = user_info is None
-    if not_login_client:
+    
+    is_login_client = checker.is_login_client(session_id)
+    if not is_login_client:
         status_code = 303 #see other
         return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
     content = db_controller.get_content(content_idx)
 
-    user_is_not_admin = user_info['previlage'] != 'admin'
-    login_user_is_not_author = user_info['user_idx'] != content['user_idx']
-    if login_user_is_not_author and user_is_not_admin:
+    user_info = session_controller.get_session(session_id)
+    is_admin = checker.is_admin(user_info)
+    is_author = checker.is_author(content,user_info)
+    if not is_author and not is_admin:
         status_code = 303 #see other
         return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
@@ -309,8 +337,8 @@ def delete_comment(comment_idx:int,session_id:str|None=Cookie(default=None)):
     user_info = session_controller.get_session(session_id)
     content_idx = comment['content_idx']
 
-    auth_failed = user_info['user_idx'] != comment['user_idx']
-    if auth_failed:
+    is_author = checker.is_author_comment(comment,user_info)
+    if not is_author:
         status_code = 303 #see other
         return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
@@ -396,9 +424,8 @@ def push_comment(content_idx:int,
                  comment:str|None=Form(default=None),
                  session_id:str=Cookie(default='-')
                  ):
-    user_info = session_controller.get_session(session_id)
-    not_login_client = user_info is None
-    if not_login_client:
+    is_login_client = checker.is_login_client(session_id)
+    if not is_login_client:
         status_code = 303 #see other
         return RedirectResponse('/content/{content_idx:int}', status_code=status_code)
     created_time = datetime.now().strftime(global_config.time_format)
@@ -424,8 +451,8 @@ def serve_user_login_form(error_message:str = Query(default=' ')):
 @app.post('/login')
 def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=Form(default='-')):
     user_info = db_controller.get_user_with_id_password(user_id,user_password)
-    invalid_user_info = user_info is None
-    if invalid_user_info:
+    is_valid_user_info = checker.is_valid_user_info(user_info)
+    if not is_valid_user_info:
         status_code = 303
         error_message = 'user id or password is not correct. please check your input.'.replace(' ','_')
         return RedirectResponse(url=f'/login?error_message={error_message}', status_code=status_code)

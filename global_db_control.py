@@ -3,7 +3,6 @@ import jinja2
 import sqlite3
 from pathlib import Path
 from datetime import datetime
-from uuid import uuid4
 
 class DBController:
     def __init__(self):
