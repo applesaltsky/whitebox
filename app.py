@@ -565,7 +565,7 @@ def serve_javascript(file_name:str):
     status_code = 200  #see other
     headers = {'Content-Type':'text/javascript'}
     return Response(content=body, status_code=status_code, headers=headers)
-
+ 
 @app.get('/css/{file_name:str}')
 def serve_css(file_name:str):
     file_path = Path(config.PATH_CSS,file_name)
