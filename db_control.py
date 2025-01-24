@@ -186,6 +186,15 @@ class DBController:
             AND content_idx = {{content_idx}}
         """)
 
+        self.SQL_GET_CONTENT_COUNT = jinja2.Template("""
+        SELECT COUNT(CONTENT_IDX)
+        FROM CONTENT_TABLE
+        WHERE 1=1
+            {% if category %}  
+               AND category = "{{category}}"                                      
+            {% endif %}                                           
+        """)
+
         self.SQL_UPDATE_CONTENT_VIEW_COUNT = jinja2.Template("""
         UPDATE CONTENT_TABLE
         SET view_count = view_count + 1
@@ -375,6 +384,13 @@ class DBController:
         WHERE 1=1
             AND comment_idx = {{comment_idx}}
         """)
+
+        self.SQL_DELETE_COMMENT_WITH_CONTENT_IDX = jinja2.Template("""
+        DELETE
+        FROM COMMENT_TABLE
+        WHERE 1=1
+             AND content_idx = {{content_idx}}
+        """)
         
 
     def init_db(self,db_path:Path|str):
@@ -447,23 +463,41 @@ class DBController:
             else:
                 return rst
             
-    def get_content_list(self,category:str=None,init_row_idx:int=None,row_count:int=None)->list[dict]:
-        SQL = self.SQL_GET_CONTENT_LIST.render(**{'limit':1000,'category':category})
+    def get_content_count(self,category:str)->int:
+        SQL = self.SQL_GET_CONTENT_COUNT.render(**{"category":category})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            for i in cursor.execute(SQL):
+                return i[0]
+            
+    def get_content_list(self,category:str=None,page:int|None=None,row_cnt:int|None=None)->list[dict]:
+        '''
+        page 1 / row cnt 5  -> get 1,2,3,4,5
+        page 3 / row cnt 10 -> get 21~30
+        '''
+        start_cnt = (page-1)*row_cnt + 1
+        end_cnt = page*row_cnt
+        SQL = self.SQL_GET_CONTENT_LIST.render(**{'limit':end_cnt,'category':category})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
+            indexer = 0
             for content_idx,user_idx,title,category,created_time,updated_time,content,view_count,user_id in cursor.execute(SQL):
-                rst.append({
-                            'content_idx':content_idx,
-                            'user_idx':user_idx,
-                            'title':title,
-                            'category':category,
-                            'created_time':created_time,
-                            'updated_time':updated_time,
-                            'content':content,
-                            'view_count':view_count,
-                            'user_id':user_id
-                            })
+                indexer += 1
+                if indexer >= start_cnt:
+                    rst.append({
+                                'content_idx':content_idx,
+                                'user_idx':user_idx,
+                                'title':title,
+                                'category':category,
+                                'created_time':created_time,
+                                'updated_time':updated_time,
+                                'content':content,
+                                'view_count':view_count,
+                                'user_id':user_id
+                                })
+                if indexer > end_cnt:
+                    break
             return rst
         
                    
@@ -706,6 +740,13 @@ class DBController:
                             'comment':comment
                            })
             return rst
+
+    def delete_comment_with_content_idx(self, content_idx:int):
+        SQL = self.SQL_DELETE_COMMENT_WITH_CONTENT_IDX.render(**{'content_idx':content_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL)
+            conn.commit()
 
     def push_comment(self,
                      comment_idx:int,

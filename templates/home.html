@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>간단한 양식</title>
+    <title>{{global_title}}</title>
     <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
     <link rel="stylesheet" href="/css/global_table.css" type="text/css"></link>
     <style>
@@ -19,6 +19,23 @@
 
         #category_view div {
             margin-right:10px;
+        }
+
+        #view_select {
+            margin-top:10px; 
+            display:flex;
+        }
+
+        #view_select #row_cnt_select {
+            width:50px;
+        }
+
+        #view_select #page_select a {
+            margin-right:5px;
+        }
+
+        #created_by {
+            text-align:right;
         }
     </style>
 </head>
@@ -69,12 +86,12 @@
             </div>
         </div>
         <div id='title_view'>   
-            <h1> content list </h1>
+            <h1> {{global_title}} </h1>
         </div>
         <div id='view'>
             <div id="category_view">
                 <div>
-                    <a href="/">recent</a>
+                    <a href="/">Recent</a>
                 </div>
                 {% for category in category_list %}
                 <div>
@@ -99,14 +116,57 @@
                         <td>{{row['content_idx']}}</td>
                         <td>{{row['user_id']}}</td>
                         <td>{{row['category']}}</td>
-                        <td> <a href='/content/{{row['content_idx']}}'> {{row['title']}} </a> </td>
+                        <td> <a href="/content/{{row['content_idx']}}"> {{row['title']}} </a> </td>
                         <td>{{row['view_count']}} </td>
                         <td>{{row['created_time']}} </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            <div id="view_select">
+                <div style="margin-right : 10px">
+                    <form id="row_cnt_select_submit" action="/" method="get">
+                        {% if category %}
+                            <input style="display:none" type="text" name = "category" value="{{category}}"></input>
+                        {% endif %}
+                        <input style="display:none" type="text" name = "page" value="{{page}}"></input>
+                        <select id="row_cnt_select" name="row_cnt">
+                            {% for row_cnt_option in row_cnt_list %}
+                                {% if row_cnt_option == row_cnt %}
+                                    <option value="{{row_cnt_option}}" selected> 
+                                {% else %}
+                                    <option value="{{row_cnt_option}}"> 
+                                {% endif %}   
+                                        {{row_cnt_option}} 
+                                    </option>
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <div id="page_select">              
+                    {% for page_select in page_list %}
+                        {% if category %}
+                            <a href="/?category={{category}}&page={{page_select}}&row_cnt={{row_cnt}}">
+                        {% else %}  
+                            <a href="/?page={{page_select}}&row_cnt={{row_cnt}}">
+                        {% endif %}
+                                {{page_select}}
+                            </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div id="created_by">
+                wooseok2.jang@sk.com <br>
+                Created by Jang Woo-seok <br> 
+            </div>
         </div>
     </div>
+    <script>
+        const submitRowCntSeletectForm = () => {
+            document.getElementById("row_cnt_select_submit").submit()
+        };
+        document.getElementById("row_cnt_select").addEventListener("change",submitRowCntSeletectForm);
+    </script>
 </body>
 </html>

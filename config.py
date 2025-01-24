@@ -9,7 +9,7 @@ dotenv.load_dotenv()
 def is_windows():
     return platform.system() == "Windows"
 
-class GlobalConfig:
+class Config:
     def __init__(self):
         self.PATH_APP_PY =  Path(__file__)
         self.PATH_PROJECT = self.PATH_APP_PY.parent
@@ -37,6 +37,8 @@ class GlobalConfig:
             if not os.path.exists(folder):
                 os.makedirs(folder)
 
+        self.global_title = "whitebox"
+
         self.time_server_started = datetime.now()
         self.time_format = "%Y-%m-%d %H:%M:%S"
         self.reload = False
@@ -49,6 +51,10 @@ class GlobalConfig:
         self.write_content_previlage = ['admin','user']  #'admin', 'user'
 
         self.max_session_age = 3600 * 12  #sec 
+
+        #page select count on home.html
+        self.max_page_count = 10 
+        self.row_cnt_list = [5,10,20,30]
 
         self.category_list = ['DataProcessing','Backend','ComputerScience']
 
