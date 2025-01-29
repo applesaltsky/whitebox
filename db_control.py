@@ -42,9 +42,8 @@ class DBController:
                 user_idx INTEGER PRIMARY KEY,
                 user_id TEXT NOT NULL,
                 user_password TEXT NOT NULL,
-                user_find_password_question TEXT NOT NULL,
-                user_find_password_answer TEXT NOT NULL,
-                user_email TEXT NOT NULL,
+                user_password_question TEXT NOT NULL,
+                user_password_answer TEXT NOT NULL,
                 created_time TEXT NOT NULL,
                 previlage TEXT NOT NULL
             )
@@ -206,9 +205,8 @@ class DBController:
         SELECT  user_idx,
                 user_id,
                 user_password,
-                user_find_password_question,
-                user_find_password_answer,
-                user_email,
+                user_password_question,
+                user_password_answer,
                 created_time,
                 previlage
         FROM USER_TABLE
@@ -218,9 +216,8 @@ class DBController:
         SELECT  user_idx,
                 user_id,
                 user_password,
-                user_find_password_question,
-                user_find_password_answer,
-                user_email,
+                user_password_question,
+                user_password_answer,
                 created_time,
                 previlage
         FROM USER_TABLE
@@ -232,43 +229,27 @@ class DBController:
         SELECT user_idx,
                user_id,
                user_password,
-               user_find_password_question,
-               user_find_password_answer,
-               user_email,
+               user_password_question,
+               user_password_answer,
                created_time,
                previlage
         FROM USER_TABLE
         WHERE 1=1
-            AND USER_ID = "{{USER_ID}}"
-        """)
-
-        self.SQL_FIND_USER_WITH_IDX = jinja2.Template("""
-        SELECT user_idx,
-               user_id,
-               user_password,
-               user_find_password_question,
-               user_find_password_answer,
-               user_email,
-               created_time,
-               previlage
-        FROM USER_TABLE                                                                  
-        WHERE 1=1
-            AND user_idx = {{USER_IDX}}
+            AND user_id = "{{user_id}}"
         """)
 
         self.SQL_FIND_USER_WITH_ID_PW = jinja2.Template("""
         SELECT user_idx,
                user_id,
                user_password,
-               user_find_password_question,
-               user_find_password_answer,
-               user_email,
+               user_password_question,
+               user_password_answer,
                created_time,
                previlage
         FROM USER_TABLE
         WHERE 1=1
-            AND USER_ID = "{{USER_ID}}"  
-            AND USER_PASSWORD = "{{USER_PASSWORD}}"                                              
+            AND user_id = "{{user_id}}"  
+            AND user_password = "{{user_password}}"                                              
         """)
 
         self.SQL_MAX_USER_IDX = """
@@ -282,9 +263,8 @@ class DBController:
             user_idx,
             user_id,
             user_password,
-            user_find_password_question,
-            user_find_password_answer,
-            user_email,
+            user_password_question,
+            user_password_answer,
             created_time,
             previlage
         )
@@ -295,9 +275,52 @@ class DBController:
             ?, 
             ?,
             ?,
-            ?,
             ?
         )
+        """
+
+        self.SQL_GET_USER_PASSWORD_QUESTSION_WITH_USER_ID = jinja2.Template("""
+        SELECT user_idx,
+                user_id,
+                user_password,
+                user_password_question,
+                user_password_answer,
+                created_time,
+                previlage
+        FROM USER_TABLE 
+        WHERE 1=1
+            AND user_id = "{{user_id}}"                                                          
+        """)
+        
+        self.SQL_CHECK_USER_ID_AND_USER_PASSWORD_ANSWER = jinja2.Template("""
+        SELECT user_idx,
+                user_id,
+                user_password,
+                user_password_question,
+                user_password_answer,
+                created_time,
+                previlage
+        FROM USER_TABLE 
+        WHERE 1=1
+            AND user_id = "{{user_id}}"
+            AND user_password_answer = "{{user_password_answer}}"                                                         
+        """)
+
+        self.SQL_UPDATE_USER_PASSWORD = """
+        UPDATE USER_TABLE
+        SET user_password = ?
+        WHERE 1=1
+            AND user_idx = ?
+        """
+
+        self.SQL_UPDATE_USER = """
+        UPDATE USER_TABLE
+        SET user_id = ?,
+            user_password = ?,
+            user_password_question = ?,
+            user_password_answer = ?
+        WHERE 1=1
+            AND user_idx = ?
         """
 
         self.SQL_GET_IMAGE_ALL = """
@@ -378,6 +401,8 @@ class DBController:
         )
         """
 
+        
+
         self.SQL_DELETE_COMMENT = jinja2.Template("""
         DELETE 
         FROM COMMENT_TABLE
@@ -391,7 +416,8 @@ class DBController:
         WHERE 1=1
              AND content_idx = {{content_idx}}
         """)
-        
+
+
 
     def init_db(self,db_path:Path|str):
         self.db_path:Path = Path(db_path)
@@ -581,6 +607,7 @@ class DBController:
             
     def exist_user_id(self,user_id:str):
         SQL = self.SQL_FIND_USER_WITH_ID.render(**{'user_id':user_id})
+        print(SQL)
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             cnt = 0
@@ -589,18 +616,20 @@ class DBController:
         return cnt > 0
     
     def get_user_with_id_password(self,user_id:str,user_password:str):
-        SQL = self.SQL_FIND_USER_WITH_ID_PW.render({'USER_ID':user_id,'USER_PASSWORD':user_password})
+        '''
+        this function makes user_info in session
+        '''
+        SQL = self.SQL_FIND_USER_WITH_ID_PW.render({'user_id':user_id,'user_password':user_password})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()  
             rst = None
-            for user_idx,user_id, user_password, user_find_password_question, user_find_password_answer,user_email,created_time,previlage  in cursor.execute(SQL):
+            for user_idx,user_id, user_password, user_password_question, user_password_answer,created_time,previlage  in cursor.execute(SQL):
                 rst = {
                             'user_idx':user_idx,
                             'user_id':user_id,
                             'user_password':user_password,
-                            'user_find_password_question':user_find_password_question,
-                            'user_find_password_answer':user_find_password_answer,
-                            'user_email':user_email,
+                            'user_password_question':user_password_question,
+                            'user_password_answer':user_password_answer,
                             'created_time':created_time,
                             'previlage':previlage
                             }
@@ -612,14 +641,13 @@ class DBController:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()  
             rst = []
-            for user_idx, user_id, user_password, user_find_password_question, user_find_password_answer, user_email, created_time, previlage in cursor.execute(SQL):
+            for user_idx, user_id, user_password, user_password_question, user_password_answer, created_time, previlage in cursor.execute(SQL):
                 rst.append({
                             'user_idx':user_idx,
                             'user_id':user_id,
                             'user_password':user_password,
-                            'user_find_password_question':user_find_password_question,
-                            'user_find_password_answer':user_find_password_answer,
-                            'user_email':user_email,
+                            'user_password_question':user_password_question,
+                            'user_password_answer':user_password_answer,
                             'created_time':created_time,
                             'previlage':previlage
                             })
@@ -633,33 +661,107 @@ class DBController:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
-            for user_idx,user_id, user_password, user_find_password_question, user_find_password_answer,user_email,created_time,previlage in cursor.execute(SQL):
+            for user_idx,user_id, user_password, user_password_question, user_password_answer,created_time,previlage in cursor.execute(SQL):
                 rst.append({
                             'user_idx':user_idx,
                             'user_id':user_id,
                             'user_password':user_password,
-                            'user_find_password_question':user_find_password_question,
-                            'user_find_password_answer':user_find_password_answer,
-                            'user_email':user_email,
+                            'user_password_question':user_password_question,
+                            'user_password_answer':user_password_answer,
                             'created_time':created_time,
                             'previlage':previlage
                             })
             return rst
 
-    def push_user(self,user_idx:int,user_id:str, user_password:str,user_find_password_question:str, user_find_password_answer:str, user_email:str, created_time:datetime, previlage:str):
+    def push_user(self,user_idx:int,user_id:str, user_password:str,user_password_question:str, user_password_answer:str, created_time:datetime, previlage:str):
         SQL = self.SQL_PUSH_USER
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             cursor.execute(SQL,(user_idx,
                                 user_id,
                                 user_password,
-                                user_find_password_question,
-                                user_find_password_answer,
-                                user_email,
+                                user_password_question,
+                                user_password_answer,
                                 created_time,
                                 previlage
                                 )
                             )
+            conn.commit()
+
+    def update_user(self, 
+                    user_idx:int, 
+                    user_id:str,
+                    user_password:str, 
+                    user_password_question:str, 
+                    user_password_answer:str):
+        SQL = self.SQL_UPDATE_USER
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL,(
+                                user_id,
+                                user_password,
+                                user_password_question,
+                                user_password_answer,
+                                user_idx,
+                                )
+                            )
+            conn.commit()
+
+    def get_user_password_question_with_user_id(self,user_id:str)->str|None:
+        SQL= self.SQL_GET_USER_PASSWORD_QUESTSION_WITH_USER_ID.render(**{'user_id':user_id})
+        rtn = None
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            for (user_idx, 
+                 user_id, 
+                 user_password, 
+                 user_password_question, 
+                 user_password_answer, 
+                 created_time, 
+                 previlage) in cursor.execute(SQL):
+                rtn = user_password_question
+        return rtn
+
+    def check_user_id_and_user_password_answer(self,user_id:str,user_password_answer:str)->bool:
+        SQL= self.SQL_CHECK_USER_ID_AND_USER_PASSWORD_ANSWER.render(**{'user_id':user_id,'user_password_answer':user_password_answer})
+        rtn = False
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            for (user_idx, 
+                 user_id, 
+                 user_password, 
+                 user_password_question,
+                 user_password_answer,
+                 created_time, 
+                 previlage) in cursor.execute(SQL):
+                rtn = True
+                break
+        return rtn
+    
+    def get_user_idx_with_user_id(self,user_id:str)->int:
+        '''
+        if user_id does not exists, return -1
+        else, return positive integer
+        '''
+        SQL = self.SQL_FIND_USER_WITH_ID.render(**{'user_id':user_id})
+        rtn = -1
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            for (user_idx,
+                user_id,
+                user_password,
+                user_password_question,
+                user_password_answer,
+                created_time,
+                previlage) in cursor.execute(SQL):
+                rtn = user_idx
+        return rtn  
+    
+    def update_user_password(self,user_idx:int, user_password:str)->int:
+        SQL = self.SQL_UPDATE_USER_PASSWORD
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL,(user_password,user_idx))
             conn.commit()
 
     def get_image_all(self)->list[str]:
@@ -764,6 +866,7 @@ class DBController:
                                 comment))
             conn.commit()  
 
+    
 
             
 

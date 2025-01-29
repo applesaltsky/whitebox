@@ -38,16 +38,14 @@ if empty_user_db:
         'user_idx':0,
         'user_id':config.admin_id,
         'user_password':config.admin_pw,
-        'user_find_password_questsion':'-',
-        'user_find_password_answer':'-',
-        'user_email':'aer0700@naver.com'
+        'user_password_question':'-',
+        'user_password_answer':'-'
     }
     db_controller.push_user(user_idx=admin_user_info['user_idx'],
-                    user_id=admin_user_info['user_id'],
-                    user_password=admin_user_info['user_password'],
-                    user_find_password_question=admin_user_info['user_find_password_questsion'],
-                    user_find_password_answer=admin_user_info['user_find_password_answer'],
-                    user_email=admin_user_info['user_email'],
+                    user_id = admin_user_info['user_id'],
+                    user_password = admin_user_info['user_password'],
+                    user_password_question = admin_user_info['user_password_question'],
+                    user_password_answer = admin_user_info['user_password_answer'],
                     created_time=datetime.now(),
                     previlage='admin')    
 
@@ -187,6 +185,12 @@ def home_handler(session_id:str = Cookie(default='-'),
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
+
+@app.post('/')
+def redirect_to_get():
+    status_code = 303 #see other
+    response = RedirectResponse('/',status_code=status_code)
+    return response
 
 @app.get('/content')
 def submit_content_form_handler(session_id:str = Cookie(default='-'),
@@ -375,10 +379,22 @@ def delete_comment(comment_idx:int,session_id:str|None=Cookie(default=None)):
 
 
 @app.get('/user')
-def submit_user_form_handler(error_message:str = Query(default=' ')):
+def serve_create_user_page(session_id:str = Cookie(default='-'),
+                           error_message:str = Query(default=' ')):
     '''
     serve create account form
     '''
+    is_login_client = checker.is_login_client(session_id)
+    if is_login_client:
+        #logout and redirect to home
+        response = RedirectResponse('/')
+        response.set_cookie(key='session_id',
+                        value="-",
+                        max_age=0)
+        if session_controller.get_session(session_id):
+            session_controller.delete_session(session_id)
+        return response
+
     with open(Path(config.PATH_TEMPLATES,'user.html'),'rt',encoding='utf-8') as f:
         body = f.read()
     body = jinja2.Template(body).render(**{'error_message':error_message.replace('_',' '),
@@ -389,46 +405,17 @@ def submit_user_form_handler(error_message:str = Query(default=' ')):
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/user')
-def submit_user_request_handler(user_id:str=Form(default='-'),
+def create_user_request(user_id:str=Form(default='-'),
                                 user_password:str=Form(default='-'),
                                 user_password_confirm:str=Form(default='-'),
-                                user_find_password_question:str=Form(default='-'),
-                                user_find_password_answer:str=Form(default='-'),
-                                user_email:str=Form(default='-')
+                                user_password_question:str=Form(default='-'),
+                                user_password_answer:str=Form(default='-'),
                                 ):
     '''
     handle create account request
     '''
     
-    def valid_user_id(user_id:str):
-        too_short_user_id = len(user_id) < 5
-        if too_short_user_id:
-            error_message = 'user_id must be longer then 5.'
-            return (False, error_message)
-        
-        exist_user_id = db_controller.exist_user_id(user_id)
-        if exist_user_id:
-            error_message = f'user_id({user_id}) already exists.'
-            return (False, error_message)
-        
-        error_message = None
-        return (True, error_message)
-    
-    def valid_user_password(user_password:str, user_password_confirm:str):
-        too_short_user_password = len(user_id) < 5
-        if too_short_user_password:
-            error_message = 'user_password must be longer then 5.'
-            return (False, error_message)
-        
-        double_confirm_fail = user_password != user_password_confirm
-        if double_confirm_fail:
-            error_message = 'double confirm password fail. please check your input.'
-            return (False, error_message)
-        
-        error_message = None
-        return (True, error_message)
-
-    for validation, error_message in [valid_user_id(user_id),valid_user_password(user_password,user_password_confirm)]:
+    for validation, error_message in [checker.valid_user_id(db_controller,user_id),checker.valid_user_password(user_password,user_password_confirm)]:
         if validation is not True:
             status_code = 303  #see other
             error_message = error_message.replace(' ','_')
@@ -438,13 +425,153 @@ def submit_user_request_handler(user_id:str=Form(default='-'),
     db_controller.push_user(user_idx=new_user_idx,
                             user_id=user_id,
                             user_password=user_password,
-                            user_find_password_question=user_find_password_question,
-                            user_find_password_answer=user_find_password_answer,
-                            user_email=user_email,
+                            user_password_question=user_password_question,
+                            user_password_answer=user_password_answer,
                             created_time=datetime.now(),
                             previlage='user')
     status_code = 303  #see other
     return RedirectResponse(url='/login', status_code=status_code)
+
+@app.get('/find/user')
+def serve_find_user_page(error_message:str|None = Query(None)
+                    ):
+    
+    template = 'user_find.html'
+    with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
+        body = f.read()
+
+    body = jinja2.Template(body).render(**{
+                                           'error_message':error_message,
+                                           'user_id':None,
+                                           'global_title':config.global_title,
+                                           'user_password_question':None,
+                                           'temp_user_password':None
+                                           })
+    status_code = 200
+    headers = {'Content-Type':'text/html;charset=utf-8'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
+@app.post('/find/user')
+def serve_find_user_page(user_id:str|None = Form(default=None),
+                         user_password_answer:str|None = Form(default=None)
+                    ):
+    error_message = None
+    template = 'user_find.html'
+    with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
+        body = f.read()    
+
+    if user_id:
+        exist_user_id = db_controller.exist_user_id(user_id)
+        if not exist_user_id:
+            error_message = f"Can not find user_id={user_id}, please check your input."
+            user_id = None
+    
+    user_password_question = None
+    if user_id:
+        user_password_question = db_controller.get_user_password_question_with_user_id(user_id)
+    
+    temp_user_password = None
+    if user_password_answer:
+        user_id_and_answer_is_correct = db_controller.check_user_id_and_user_password_answer(user_id,user_password_answer)
+        
+        if not user_id_and_answer_is_correct:
+            error_message = "your answer is not correct, please check your input"
+        
+        if user_id_and_answer_is_correct: 
+            user_idx = db_controller.get_user_idx_with_user_id(user_id)
+            temp_user_password = str(uuid4())
+            db_controller.update_user_password(user_idx, temp_user_password)   
+
+    body = jinja2.Template(body).render(**{
+                                           'error_message':error_message,
+                                           'user_id':user_id,
+                                           'global_title':config.global_title,
+                                           'user_password_question':user_password_question,
+                                           'temp_user_password':temp_user_password
+                                           })
+    status_code = 200
+    headers = {'Content-Type':'text/html;charset=utf-8'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
+@app.get('/edit/user')
+def serve_edit_user_page(error_message:str|None = Query(default=None),
+                         session_id:str = Cookie(default='-')):
+    login_client = checker.is_login_client(session_id)
+    is_valid_session = checker.is_valid_session_id(session_controller, session_id)
+    if not (login_client and is_valid_session):
+        #logout and redirect to home
+        response = RedirectResponse('/')
+        return response
+    
+    user_info = session_controller.get_session(session_id) 
+    
+    template = 'user_edit.html'
+    with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
+        body = f.read()    
+
+    body = jinja2.Template(body).render(**{'global_title':config.global_title,
+                                           'user_info':user_info,
+                                           'error_message':error_message})
+    status_code = 200
+    headers = {'Content-Type':'text/html;charset=utf-8'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
+@app.post('/edit/user')
+def handle_edit_user_request(session_id:str = Cookie(default='-'),
+                            user_id:str|None = Form(default=None),
+                            user_id_new:str|None = Form(default=None),
+                            user_password:str|None = Form(default=None),
+                            user_password_new:str|None = Form(default=None),
+                            user_password_new_confirm:str|None = Form(default=None),
+                            user_password_question:str|None = Form(default=None),
+                            user_password_answer:str|None = Form(default=None),
+
+                              ):
+    
+    user_info_in_session = session_controller.get_session(session_id)
+    user_info_in_db = db_controller.get_user_with_id_password(user_id,user_password)
+
+    if not checker.is_same_user_info_db_and_session(user_info_in_db,user_info_in_session):
+        error_message = 'password confirm failed. please, check your input.'
+        status_code = 303 #see other
+        response = RedirectResponse(f'/edit/user?error_message={error_message}',status_code=status_code)
+        
+        return response
+    
+    validation, error_message = checker.valid_user_password(user_password_new,user_password_new_confirm)
+    if not validation:
+        status_code = 303 #see other
+        response = RedirectResponse(f'/edit/user?error_message={error_message}',status_code=status_code)
+        return response
+    
+    user_info = session_controller.get_session(session_id)
+    user_idx = user_info['user_idx']
+
+    #update db
+    db_controller.update_user(user_idx,
+                              user_id_new,
+                              user_password_new,
+                              user_password_question,
+                              user_password_answer)
+    
+    #update session
+    session_controller.delete_session(session_id)
+
+    session_id = session_controller.create_session_id()
+    user_info = db_controller.get_user_with_user_idx(user_idx)
+    session_controller.push_session(session_id,user_info)
+    
+    #update client cookie(login again)
+    status_code = 303 #see other
+    response = RedirectResponse(url='/',status_code=status_code)
+
+    max_age_session = config.max_session_age  #sec
+    response.set_cookie(key='session_id',
+                        value=session_id,
+                        max_age=max_age_session
+                        )
+    session_controller.push_session(session_id,user_info)
+    return response
 
 @app.post('/comment/{content_idx:int}')
 def push_comment(content_idx:int, 
@@ -491,7 +618,7 @@ def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=
     response = RedirectResponse(url='/', status_code=status_code)
 
     max_age_session = config.max_session_age  #sec
-    session_id = str(uuid4())
+    session_id = session_controller.create_session_id()
     response.set_cookie(key='session_id',
                         value=session_id,
                         max_age=max_age_session
@@ -562,7 +689,7 @@ def serve_javascript(file_name:str):
     file_path = Path(config.PATH_JAVASCRIPT,file_name)
     with open(file_path,'rt',encoding='utf-8') as f:
         body = f.read()
-    status_code = 200  #see other
+    status_code = 200  
     headers = {'Content-Type':'text/javascript'}
     return Response(content=body, status_code=status_code, headers=headers)
  
@@ -571,7 +698,7 @@ def serve_css(file_name:str):
     file_path = Path(config.PATH_CSS,file_name)
     with open(file_path,'rt',encoding='utf-8') as f:
         body = f.read()
-    status_code = 200  #see other
+    status_code = 200
     headers = {'Content-Type':'text/css'}
     return Response(content=body, status_code=status_code, headers=headers)
 
@@ -580,7 +707,7 @@ def serve_image(file_name:str):
     file_path = Path(config.PATH_IMAGE,file_name)
     with open(file_path,'rb') as f: 
         body = f.read()
-    status_code = 200  #see other
+    status_code = 200  
     headers = {'Content-Type':'image/webp'}
     return Response(content=body, status_code=status_code, headers=headers)
 
@@ -597,6 +724,7 @@ def serve_admin_panel(session_id:str = Cookie(default='-')):
     return Response(content=body, status_code=status_code, headers=headers)
 
 
+#run fastapi application
 if __name__ == "__main__":
     print(f"server started : {config.time_server_started}")
     uvicorn.run("__main__:app",port=config.PORT,reload=config.reload)

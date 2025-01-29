@@ -44,9 +44,8 @@
                         <th>user_idx</th>
                         <th>user_id</th>
                         <th>user_password</th>
-                        <th>user_find_password_question</th>
-                        <th>user_find_password_answer</th>
-                        <th>user_email</th>
+                        <th>user_password_question</th>
+                        <th>user_password_answer</th>
                         <th>created_time</th>
                     </tr>
                 </thead>
@@ -57,9 +56,8 @@
                         <td> {{row['user_idx']}} </td>
                         <td> {{row['user_id']}} </td>
                         <td> {{row['user_password']}} </td>
-                        <td> {{row['user_find_password_question']}} </td>
-                        <td> {{row['user_find_password_answer']}} </td>
-                        <td> {{row['user_email']}} </td>
+                        <td> {{row['user_password_question']}} </td>
+                        <td> {{row['user_password_answer']}} </td>
                         <td> {{row['created_time']}} </td>
                     </tr>
                     {% endfor %}

@@ -1,11 +1,13 @@
 from datetime import datetime,timedelta
-import time
+from uuid import uuid4
 
 class SessionController:
     def __init__(self):
         #in memory session
         self.session_db = []
 
+    def create_session_id(self):
+        return str(uuid4())
 
     def push_session(self,session_id:str,user_info:dict):
         new_session = {
@@ -22,6 +24,9 @@ class SessionController:
         self.session_db = list(filter(is_alived_session,self.session_db))
 
     def get_session(self,session_id:str)->dict|None:
+        '''
+        if session does not contain session_id, return None
+        '''
         for session in self.session_db:
             if session['session_id'] == session_id:
                 return session['user_info']

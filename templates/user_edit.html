@@ -26,23 +26,26 @@
             </div>
         </div>  
         <div id='title_view'> 
-            <h1>create account</h1>
+            <h1>edit account</h1>
         </div>
         <div id='view'>
+            {% if error_message %}
             <div> {{error_message}} </div>
+            {% endif %}
             <div id='user_input'>
-                <form action="/user" method="post">
+                <form action="/edit/user" method="post">  
+                    <input style='display:none' type="text" id="user_id" name="user_id" value="{{user_info['user_id']}}" readonly>
                     <div class='user_input_form'>
                         <div class='user_input_form_category'>
                             ID
                         </div>
                         <div class='user_input_form_input'>
-                            <input type="text" id="user_id" name="user_id" required>
+                            <input type="text" id="user_id_new" name="user_id_new" value="{{user_info['user_id']}}" required>
                         </div>
                     </div>
                     <div class='user_input_form'>
                         <div class='user_input_form_category'>
-                            PASSWORD
+                            PASSWORD CONFIRM
                         </div>
                         <div class='user_input_form_input'>
                             <input type="password" id="user_password" name="user_password" required></input>
@@ -50,10 +53,18 @@
                     </div>
                     <div class='user_input_form'>
                         <div class='user_input_form_category'>
-                            PASSWORD_CONFIRM
+                            NEW PASSWORD
                         </div>
                         <div class='user_input_form_input'>
-                            <input type="password" id="user_password_confirm" name="user_password_confirm" required></input>
+                            <input type="password" id="user_password_new" name="user_password_new" value="{{user_info['user_password']}}" required></input>
+                        </div>
+                    </div>
+                    <div class='user_input_form'>
+                        <div class='user_input_form_category'>
+                            NEW PASSWORD CONFIRM
+                        </div>
+                        <div class='user_input_form_input'>
+                            <input type="password" id="user_password_new" name="user_password_new_confirm" value="{{user_info['user_password']}}" required></input>
                         </div>
                     </div>
                     <div class='user_input_form'>
@@ -61,7 +72,7 @@
                             find_password_question
                         </div>
                         <div class='user_input_form_input'> 
-                            <input type="text" id="user_password_question" name="user_password_question" value="내가 가장 좋아하는 과자는?" required></input>
+                            <input type="text" id="user_password_question" name="user_password_question" value="{{user_info['user_password_question']}}" required></input>
                         </div>
                     </div>
                     <div class='user_input_form'>
@@ -69,7 +80,7 @@
                             find_password_answer
                         </div>
                         <div class='user_input_form_input'> 
-                            <input type="text" id="user_password_answer" name="user_password_answer" value="호두과자" required></input>
+                            <input type="text" id="user_password_answer" name="user_password_answer" value="{{user_info['user_password_answer']}}" required></input>
                         </div>
                     </div>
                     <div class='user_input_submit'>

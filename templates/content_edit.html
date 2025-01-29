@@ -68,9 +68,9 @@
                         </div>
                         <div id = 'content_edit_title_value'>
                             {% if content_idx != None %}
-                                <input type="text" id="title" name="title" aria-label="title" value="{{content['title']}}" required></input>
+                                <input type="text" id="content_edit_title_value_input" name="title" aria-label="title" value="{{content['title']}}" required></input>
                             {% else %}
-                                <input type="text" id="title" name="title" aria-label="title" value="EMPTY" required></input>
+                                <input type="text" id="content_edit_title_value_input" name="title" aria-label="title" value="EMPTY" required></input>
                             {% endif %}
                         </div> 
                     </div>
@@ -108,9 +108,24 @@
                     </div>
                     <div id ='content_edit_main'>
                         {% if content_idx != None %}
-                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>{{content['content']}}</textarea>
+                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>
+{{content['content']}}
+                            </textarea>
                         {% else %}
-                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>## you can write content with markdown and html tag on this place!</textarea>
+                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>
+# you can write content
+## with markdown and html tag
+### on this place!
+
+<br>
+
+---
+
+<br>
+<br>
+
+*** good work! ***
+                            </textarea>
                         {% endif %}
                     </div>
                     <div id = 'content_edit_submit'>
@@ -163,21 +178,21 @@
             });
 
         const update_viewframe = ()=>{
-            const input_title = document.getElementById("title").value;
+            const input_title = document.getElementById("content_edit_title_value_input").value;
 
             document.getElementById("content_view_title").innerText = input_title;
 
-            const markdownInput = document.getElementById("content").value
+            const markdownInput = document.getElementById("content_edit_main_textarea").value
             const markdownOutput = document.getElementById('content_view_content');
             markdownOutput.innerHTML = marked.parse(markdownInput);
         };
-        document.getElementById("title").addEventListener('input',update_viewframe);
-        document.getElementById("content").addEventListener('input',update_viewframe);
+        document.getElementById("content_edit_title_value_input").addEventListener('input',update_viewframe);
+        document.getElementById("content_edit_main_textarea").addEventListener('input',update_viewframe);
 
         update_viewframe();
 
         const upload_image = () => {
-            const fileInput = document.getElementById('imageInput');
+            const fileInput = document.getElementById('content_edit_image_select');
             const file = fileInput.files[0];
 
             if (!file) {
@@ -200,14 +215,14 @@
 </div>
                 
 `;
-                document.getElementById("content").value = document.getElementById("content").value + img_element;
+                document.getElementById("content_edit_main_textarea").value = document.getElementById("content_edit_main_textarea").value + img_element;
                 update_viewframe();
             })
             .catch(error => {
                 console.error('Error uploading image:', error);
             })
         }
-        document.getElementById('upload_image_button').addEventListener('click',upload_image)
+        document.getElementById('content_edit_image_submit').addEventListener('click',upload_image)
 
 
     </script>

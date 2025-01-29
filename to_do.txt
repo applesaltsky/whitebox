@@ -1,9 +1,10 @@
 1. make admin pannel
 2. make created by -> end
 3. make search content
-4. make finder password 
-4.1 make change password
+4. make finder password -> end
+4.1 make change password -> done
 5. make content table index
 6. make category idx  -> end
 7. write content previlage
 8. make global title -> end
+9. make logging db

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{global_title}}</title>
+    <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
+    <link rel="stylesheet" href="/css/global_input.css" type="text/css"></link>
+    <style>
+        #mainframe {
+            width : 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id='mainframe'>  
+        <div id='top_line'>
+            <div id='top_line_empty'>
+            </div>
+            <div id='top_line_content'>
+                <form action="/" method="get">
+                    <div>
+                        <button type="submit">return to home</button>
+                    </div>
+                </form>
+            </div>
+        </div>  
+        <div id='title_view'> 
+            <h1>find password page</h1>
+        </div>
+        <div id='view'>
+            {% if temp_user_password %}
+            {% else %}
+                {% if error_message %}
+                <div> {{error_message}} </div>
+                {% endif %}
+                <div id='user_input'>
+                    {% if user_id %}
+                    {% else %}
+                    <form action="/find/user" method="post">
+                        <div class='user_input_form'>
+                            <div class='user_input_form_category'>
+                                ID
+                            </div>
+                            <div class='user_input_form_input'>
+                                <input type="text" id="user_input" name="user_id" required>
+                            </div>
+                        </div>
+                        <div class='user_input_submit'>
+                            <button type="submit">submit</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                    {% if user_id %}
+                    <form action="/find/user" method="post">
+                        <input style="display:none" name="user_id" value="{{user_id}}" readonly></input>
+                        <div class='user_input_form'>
+                            <div class='user_input_form_category'>
+                                {{user_password_question}}
+                            </div>
+                            <div class='user_input_form_input'>
+                                <input type="text" id="user_input" name="user_password_answer" required>
+                            </div>
+                        </div>
+                        <div class='user_input_submit'>
+                            <button type="submit">submit</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% if temp_user_password %}             
+                <div> After login, please, change your password. </div>
+                <div><br>TEMP PASSWORD<br>{{temp_user_password}}<br></div>
+                <div class='user_input_submit'> 
+                    <form action="/login" method="get"> 
+                        <button type="submit">login</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

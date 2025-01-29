@@ -4,7 +4,7 @@ import platform
 import dotenv
 import os
 
-dotenv.load_dotenv()
+
 
 def is_windows():
     return platform.system() == "Windows"
@@ -23,6 +23,9 @@ class Config:
         self.PATH_JAVASCRIPT = Path(self.PATH_STATIC,'js')
         self.PATH_CSS = Path(self.PATH_STATIC,'css')
         self.PATH_IMAGE = Path(self.PATH_STATIC,'images')
+
+        self.PATH_ENV = Path(self.PATH_PROJECT,'.env')
+        dotenv.load_dotenv(str(self.PATH_ENV))
 
         folders = [
                     self.PATH_DB.parent, 
@@ -52,7 +55,7 @@ class Config:
 
         self.max_session_age = 3600 * 12  #sec 
 
-        #page select count on home.html
+        #page config on home.html
         self.max_page_count = 10 
         self.row_cnt_list = [5,10,20,30]
 
