@@ -5,10 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{global_title}}</title>
     <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
+    <link rel="stylesheet" href="/css/global_input.css" type="text/css"></link>
     <link rel="stylesheet" href="/css/global_table.css" type="text/css"></link>
     <style>
         #mainframe {
             width : 1200px;
+        }
+
+        #query_info {
+            margin-top:5px;
+        }
+
+        #query_table {
+            margin-top:10px;
         }
     </style>
 </head>
@@ -34,35 +43,34 @@
             </div>
         </div>
         <div id='title_view'>
-            <h1> user list </h1>
+            <h1> ADMIN PANNEL </h1>
         </div>
         <div id ='view'>
-            <table>
-                <thead>
+            <form class="user_input_submit" action="/admin/panel" method="post">
+                <textarea id="content_edit_main_textarea" name="sql" rows="20" aria-label="content" placeholder="you can run sql on this panel" required></textarea>
+                <div>
+                    <button type="submit">run</button>
+                </div>
+            </form>
+            {% if query_result %}
+            <div id="query_info"> run_success : {{run_success}} row_cnt : {{row_cnt}} run_time : {{run_time}} sec</div>
+            <div id="query_table">
+                <table>
                     <tr>
-                        <th>previlage</th>
-                        <th>user_idx</th>
-                        <th>user_id</th>
-                        <th>user_password</th>
-                        <th>user_password_question</th>
-                        <th>user_password_answer</th>
-                        <th>created_time</th>
+                        {% for col in query_column %}
+                            <th>{{col}}</th>
+                        {% endfor %}
                     </tr>
-                </thead>
-                <tbody>
-                    {% for row in user_list %}
+                    {% for row in query_result %}
                     <tr>
-                        <td> {{row['previlage']}} </td>
-                        <td> {{row['user_idx']}} </td>
-                        <td> {{row['user_id']}} </td>
-                        <td> {{row['user_password']}} </td>
-                        <td> {{row['user_password_question']}} </td>
-                        <td> {{row['user_password_answer']}} </td>
-                        <td> {{row['created_time']}} </td>
+                        {% for item in row %}
+                            <td>{{item}}</td>
+                        {% endfor %}
                     </tr>
                     {% endfor %}
-                </tbody>
-            </table>
+                </table>
+            </div>   
+            {% endif %}
         </div>
     </div>
 </body>

@@ -3,9 +3,9 @@ class Checker:
     all method of checker should return boolean
     """
     def is_admin_url(self,url:str)->bool:
-        return r'/admin/' in str(url)
+        return r'/admin' in str(url)
 
-    def is_login_client(self,session_id:dict|None)->bool:
+    def is_login_client(self,session_id:str)->bool:
         return session_id is not None
 
     def is_valid_session_id(self,
@@ -18,6 +18,13 @@ class Checker:
         if user_info is None:
             raise ValueError("user_info is None. you should call checker.is_valid_session_id() before call checker.is_admin()")
         return user_info['previlage'] == 'admin'
+    
+    def is_admin_session(self,session_controller,session_id:str)->bool:
+        user_info = session_controller.get_session(session_id)
+        if user_info is None:
+            return False
+        return user_info['previlage'] == 'admin'
+
     
     def is_author(self,content:dict,user_info:dict)->bool:
         return content['user_idx'] == user_info['user_idx']

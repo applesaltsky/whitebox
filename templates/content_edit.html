@@ -40,7 +40,7 @@
                     </div>
                 </form>
                 {% if user_info['previlage'] == 'admin' %}
-                <form action="/admin/user" method="get">
+                <form action="/admin/panel" method="get">
                     <div>
                         <button type="submit">view user table</button>
                     </div>
@@ -108,11 +108,11 @@
                     </div>
                     <div id ='content_edit_main'>
                         {% if content_idx != None %}
-                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>
+                            <textarea id="content_edit_main_textarea" name="content" rows="30" aria-label="content" required>
 {{content['content']}}
                             </textarea>
                         {% else %}
-                            <textarea id="content_edit_main_textarea" name="content" rows="20" aria-label="content" required>
+                            <textarea id="content_edit_main_textarea" name="content" rows="30" aria-label="content" required>
 # you can write content
 ## with markdown and html tag
 ### on this place!

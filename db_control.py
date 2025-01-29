@@ -1,8 +1,8 @@
 import jinja2
 
-import sqlite3
 from pathlib import Path
 from datetime import datetime
+import os, time, sqlite3
 
 class DBController:
     def __init__(self):
@@ -12,7 +12,6 @@ class DBController:
         PRAGMA foreign_keys = ON;
         '''
 
-        #(0, 0, 'hello world!', '20250117181554', 'test world')
         self.SQL_INIT_CONTENT_TABLE = '''
             CREATE TABLE IF NOT EXISTS CONTENT_TABLE (
                 content_idx INTEGER PRIMARY KEY,
@@ -431,6 +430,19 @@ class DBController:
             cursor.execute(self.SQL_INIT_IMAGE_TABLE)
 
             conn.commit()
+
+    def copy_to_tmp(self,db_path_tmp:Path|str):
+        with open(str(db_path_tmp),'wb') as tmp:
+            with open(str(self.db_path),'rb') as base:
+                tmp.write(base.read())
+
+    def push_to_base(self,db_path_tmp:Path|str):
+        with open(str(db_path_tmp),'rb') as tmp:
+            with open(str(self.db_path),'wb') as base:
+                base.write(tmp.read())
+
+    def delete_tmp(self,db_path_tmp:Path|str):
+        os.remove(str(db_path_tmp))
     
     def push_content(self,
                     content_idx:int, 
@@ -866,7 +878,32 @@ class DBController:
                                 comment))
             conn.commit()  
 
-    
+    def run_sql(self,db_path:str|Path,sql:str,limit:int)->tuple[bool,float,list]:
+        SQL = sql
+        rtn = []
+        rtn_column = []
+        run_success = False
+        run_time = 0
+        try:
+            start = time.time()
+            with sqlite3.connect(str(db_path)) as conn:
+                cursor = conn.cursor()
+                for idx, row in enumerate(cursor.execute(SQL)):
+                    rtn.append(row)
+                    if idx > limit:
+                        break
+
+                for description in cursor.description:
+                    colunm_name = description[0]
+                    rtn_column.append(colunm_name)
+
+                conn.commit()
+            run_success = True
+            end = time.time()
+            run_time = end-start
+        finally:
+            return (run_success,run_time,rtn,rtn_column)
+            
 
             
 

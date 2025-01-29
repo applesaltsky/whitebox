@@ -711,14 +711,66 @@ def serve_image(file_name:str):
     headers = {'Content-Type':'image/webp'}
     return Response(content=body, status_code=status_code, headers=headers)
 
-@app.get('/admin/user')
+@app.get('/admin/panel')
 def serve_admin_panel(session_id:str = Cookie(default='-')):
+    if not checker.is_login_client(session_id):
+        status_code = 307
+        return RedirectResponse(url='/',status_code=status_code)
+
+    if not checker.is_admin_session(session_controller,session_id):
+        response = RedirectResponse('/')
+        response.set_cookie(key='session_id',
+                        value="-",
+                        max_age=0)
+        return response
+
     template = 'admin_panel.html'
     with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
-    user_list = db_controller.get_user_list(init_row_idx=None,row_count=None)
-    body = jinja2.Template(body).render(**{'user_list':user_list,
-                                           'global_title':config.global_title})
+
+    body = jinja2.Template(body).render(**{
+                                           'global_title':config.global_title,
+                                           'run_rst':False,
+                                           'row_cnt':0,
+                                           'run_time':0,
+                                           'query_result':None})
+    status_code = 200
+    headers = {'Content-Type':'text/html;charset=utf-8'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
+@app.post('/admin/panel')
+def serve_admin_panel(session_id:str = Cookie(default='-'),
+                      sql:str|None = Form(default=None)):
+    if not checker.is_login_client(session_id):
+        status_code = 307
+        return RedirectResponse(url='/',status_code=status_code)
+
+    if not checker.is_admin_session(session_controller,session_id):
+        response = RedirectResponse('/')
+        response.set_cookie(key='session_id',
+                        value="-",
+                        max_age=0)
+        return response
+    
+    db_controller.copy_to_tmp(config.PATH_DB_TMP)
+    run_success, run_time, query_result, query_column = db_controller.run_sql(
+                                                            db_path = config.PATH_DB_TMP, 
+                                                            sql = sql, 
+                                                         limit = config.limit_admin_panel_view
+                                                        )
+    
+    
+    template = 'admin_panel.html'
+    with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
+        body = f.read()
+
+    body = jinja2.Template(body).render(**{
+                                           'global_title':config.global_title,
+                                           'run_success':run_success,
+                                           'row_cnt':len(query_result),
+                                           'run_time': round(run_time,3),
+                                           'query_result':query_result,
+                                           'query_column':query_column})
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)

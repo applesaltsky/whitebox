@@ -14,6 +14,7 @@ class Config:
         self.PATH_APP_PY =  Path(__file__)
         self.PATH_PROJECT = self.PATH_APP_PY.parent
         self.PATH_DB = Path(self.PATH_PROJECT,'databases','main.db')
+        self.PATH_DB_TMP = Path(self.PATH_PROJECT,'databases','tmp.db')
         self.NAME_CONTENT_TABLE = 'CONTENT_TABLE'
         self.NAME_COMMENT_TABLE = 'COMMENT_TABLE'
         self.NAME_USER_TABLE = 'USER_TABLE'
@@ -58,6 +59,9 @@ class Config:
         #page config on home.html
         self.max_page_count = 10 
         self.row_cnt_list = [5,10,20,30]
+
+        #page config admin panel
+        self.limit_admin_panel_view = 1000
 
         self.category_list = ['DataProcessing','Backend','ComputerScience']
 

@@ -15,6 +15,10 @@
     margin-top : 10px;
 }
 
+.user_input_submit textarea {
+    width : 100%;
+}
+
 .user_input_submit button {
     width : 100%;
     height : 20px;
