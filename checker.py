@@ -68,7 +68,6 @@ class Checker:
         error_message = None
         return (True, error_message)
 
+    def is_empty_user_db(self,db_controller):
+        return db_controller.get_max_user_idx() == -1
 
-class Logger:
-    def logging(self,message):
-        return message

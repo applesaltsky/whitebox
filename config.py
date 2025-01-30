@@ -49,12 +49,16 @@ class Config:
         if is_windows():
             self.reload = True
 
+        #config write content previlage
+        self.write_content_previlage = ['admin','user']  #'admin', 'user'
+
+        #config session
+        self.max_session_age = 3600 * 12  #sec 
+
         #Delete unused image function is executed every {self.cycle_delete_unused_image} requests.
         self.cycle_delete_unused_image = 1000
 
-        self.write_content_previlage = ['admin','user']  #'admin', 'user'
-
-        self.max_session_age = 3600 * 12  #sec 
+        
 
         #page config on home.html
         self.max_page_count = 10 
@@ -63,7 +67,11 @@ class Config:
         #page config admin panel
         self.limit_admin_panel_view = 1000
 
-        self.category_list = ['DataProcessing','Backend','ComputerScience']
+        #config for logging
+        self.log_timekey_format = "%Y%m%d%H%M%S%f"
+        self.log_expiration_date = 90
+
+        self.category_list = ['DataScience','Backend','ComputerScience']
 
         self.admin_id = os.getenv("ADMIN_ID")
         self.admin_pw = os.getenv("ADMIN_PW")

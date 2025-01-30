@@ -2,7 +2,8 @@
 from config import Config
 from db_control import DBController
 from session_control import SessionController
-from util import Checker
+from checker import Checker
+from fs_control import FSController
 
 #import external package
 from fastapi import FastAPI, Response, Request, Form, Query, Cookie, UploadFile
@@ -17,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from io import BytesIO
 from threading import Lock
-import time,re,os
+import time,re
 
 
 #set config and utility func
@@ -27,12 +28,15 @@ checker = Checker()
 #init session control
 session_controller = SessionController()
 
+#init fs control
+fs_controller = FSController()
+
 #init db, and db control
 db_controller = DBController()
 db_controller.init_db(db_path=config.PATH_DB)
 
 #push one admin to user db
-empty_user_db = db_controller.get_max_user_idx() == -1
+empty_user_db = checker.is_empty_user_db(db_controller)
 if empty_user_db:
     admin_user_info = {
         'user_idx':0,
@@ -56,11 +60,30 @@ app = FastAPI()
 @app.middleware('http')
 def add_logger(request:Request, call_next):
     start_time = time.time()
-    response = call_next(request)
-    process_time = time.time() - start_time
-    memory_usage_mb = psutil.Process().memory_info().rss / (1024 * 1024)
-    print(datetime.now(), ' url : ', request.url, ' method :', request.method, f' proc_time : {process_time:.4f} sec', f' memory_usage : {memory_usage_mb:.2f} MB')
-    return response
+    success = True
+    error_message = ''
+    try:
+        response = call_next(request)
+    except Exception as e:
+        success = False
+        error_message = str(e)
+    finally:
+        process_time = time.time() - start_time
+        memory_usage_mb = psutil.Process().memory_info().rss / (1024 * 1024)
+        log_idx = db_controller.get_max_log_idx() + 1
+
+        logging_timekey = datetime.now()
+        db_controller.push_log(log_idx=log_idx,
+                               timekey=logging_timekey.strftime(config.log_timekey_format),
+                               url=str(request.url),
+                               method=request.method,
+                               proc_time=round(process_time,4),
+                               memory_usage=round(memory_usage_mb,2),
+                               success=success,
+                               error_message=error_message)
+
+        print(logging_timekey, ' url : ', request.url, ' method :', request.method, f' proc_time : {process_time:.4f} sec', f' memory_usage : {memory_usage_mb:.2f} MB')
+        return response
 
 @app.middleware('http')
 def delete_old_session(request:Request, call_next):
@@ -123,13 +146,7 @@ async def confirm_admin_client_session(request:Request, call_next):
 
 request_counter = 0
 lock = Lock()
-def delete_unused_image():
-    list_used_image = db_controller.get_image_all()
-    list_stored_image = os.listdir(config.PATH_IMAGE)
-    for image in list_stored_image:
-        if image not in list_used_image:
-            os.remove(Path(config.PATH_IMAGE,image))
-    
+   
 @app.middleware('http')
 async def request_counter_middleware(request:Request, call_next):
     global request_counter
@@ -140,7 +157,8 @@ async def request_counter_middleware(request:Request, call_next):
     with lock:
         request_counter += 1
         if request_counter % config.cycle_delete_unused_image == 0:
-            delete_unused_image()
+            fs_controller.delete_unused_image(db_controller,config.PATH_IMAGE)
+            db_controller.delete_old_log(config.log_expiration_date,config.log_timekey_format)
 
         if request_counter >= MAX_REQUEST_COUNTER:
             request_counter = 0
@@ -761,14 +779,18 @@ def serve_admin_panel(session_id:str|None = Cookie(default=None),
                         max_age=0)
         return response
     
+    
     db_controller.copy_to_tmp(config.PATH_DB_TMP)
-    run_success, run_time, query_result, query_column = db_controller.run_sql(
-                                                            db_path = config.PATH_DB_TMP, 
-                                                            sql = sql, 
-                                                         limit = config.limit_admin_panel_view
-                                                        )
-    
-    
+
+    rst = db_controller.run_sql(
+                                db_path = config.PATH_DB_TMP, 
+                                sql = sql, 
+                                limit = config.limit_admin_panel_view
+                                )
+    run_success, run_time, query_result, query_column,error_message = rst
+
+    db_controller.push_to_base(config.PATH_DB_TMP)
+ 
     template = 'admin_panel.html'
     with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
@@ -779,7 +801,9 @@ def serve_admin_panel(session_id:str|None = Cookie(default=None),
                                            'row_cnt':len(query_result),
                                            'run_time': round(run_time,3),
                                            'query_result':query_result,
-                                           'query_column':query_column})
+                                           'query_column':query_column,
+                                           'error_message':error_message
+                                           })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)

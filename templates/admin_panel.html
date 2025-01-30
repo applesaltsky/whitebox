@@ -43,7 +43,7 @@
             </div>
         </div>
         <div id='title_view'>
-            <h1> ADMIN PANNEL </h1>
+            <h1> ADMIN PANEL </h1>
         </div>
         <div id ='view'>
             <form class="user_input_submit" action="/admin/panel" method="post">
@@ -52,6 +52,11 @@
                     <button type="submit">run</button>
                 </div>
             </form>
+            {% if error_message %}
+            <div id="query_error_message">
+                {{error_message}}
+            </div>
+            {% endif %}
             {% if query_result %}
             <div id="query_info"> run_success : {{run_success}} row_cnt : {{row_cnt}} run_time : {{run_time}} sec</div>
             <div id="query_table">

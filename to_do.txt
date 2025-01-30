@@ -1,11 +1,11 @@
-1. make admin pannel -> gogo
+1. make admin pannel -> done
 2. make created by -> done
 3. make search content
 4. make finder password -> done
 4.1 make change password -> done
-5. make content table index
+5. make content table index -> gogo
 6. make category idx  -> done
-7. write content previlage
+7. write content previlage -> gogo
 8. make global title -> done
-9. make logging db
+9. make logging db -> done
 10. make english japanese chinese translation
