@@ -3,9 +3,10 @@
 3. make search content
 4. make finder password -> done
 4.1 make change password -> done
-5. make content table index -> gogo
+5. make content table index -> done
 6. make category idx  -> done
 7. write content previlage -> gogo
 8. make global title -> done
 9. make logging db -> done
 10. make english japanese chinese translation
+11. 

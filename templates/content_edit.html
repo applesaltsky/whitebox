@@ -79,20 +79,20 @@
                             CATEGORY
                         </div>
                         <div id ='content_edit_category_value'>
-                            {% if content_idx != None %}
-                                {% for category in category_list %}
-                                    {% if category == content['category'] %}
-                                        <label for="{{category}}">{{category}}</label>
-                                        <input type="radio" id="{{category}}" name="category" value="{{category}}" required checked>
+                            {% if content_idx %}
+                                {% for cate in category_list %}
+                                    {% if cate == content['category'] %}
+                                        <label for="{{cate['category']}}">{{cate['category']}}</label>
+                                        <input type="radio" id="{{cate['category']}}" name="category_idx" value="{{cate['category_idx']}}" required checked>
                                     {% else %}
-                                        <label for="{{category}}">{{category}}</label>
-                                        <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                                        <label for="{{cate['category']}}">{{cate['category']}}</label>
+                                        <input type="radio" id="{{cate['category']}}" name="category_idx" value="{{cate['category_idx']}}" required>
                                     {% endif %}
                                 {% endfor %}     
                             {% else %}
-                                {% for category in category_list %}
-                                <label for="{{category}}">{{category}}</label>
-                                <input type="radio" id="{{category}}" name="category" value="{{category}}" required>
+                                {% for cate in category_list %}
+                                <label for="{{cate['category']}}">{{cate['category']}}</label>
+                                <input type="radio" id="{{cate['category']}}" name="category_idx" value="{{cate['category_idx']}}" required>
                                 {% endfor %}
                             {% endif %} 
                         </div>

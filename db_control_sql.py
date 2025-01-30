@@ -11,7 +11,7 @@ class db_control_sql:
                 content_idx INTEGER PRIMARY KEY,
                 user_idx INTEGER NOT NULL,
                 title TEXT NOT NULL,
-                category TEXT NOT NULL,
+                category_idx INTEGER NOT NULL,
                 created_time TEXT NOT NULL,
                 updated_time TEXT NOT NULL,
                 content TEXT NOT NULL,
@@ -33,7 +33,7 @@ class db_control_sql:
         self.SQL_INIT_USER_TABLE = '''
             CREATE TABLE IF NOT EXISTS USER_TABLE (
                 user_idx INTEGER PRIMARY KEY,
-                user_id TEXT NOT NULL,
+                user_id TEXT NOT NULL UNIQUE,
                 user_password TEXT NOT NULL,
                 user_password_question TEXT NOT NULL,
                 user_password_answer TEXT NOT NULL,
@@ -64,8 +64,8 @@ class db_control_sql:
 
         self.SQL_INIT_CATEGORY_TABLE = '''
             CREATE TABLE IF NOT EXISTS CATEGORY_TABLE (
-                category_idx INTEGER,
-                category TEXT
+                category_idx INTEGER PRIMARY KEY,
+                category TEXT UNIQUE
             )
         '''
 
@@ -75,7 +75,7 @@ class db_control_sql:
             content_idx,
             user_idx,
             title,
-            category,
+            category_idx,
             created_time,
             updated_time,
             content,
@@ -96,7 +96,7 @@ class db_control_sql:
         self.SQL_UPDATE_CONTENT = """
         UPDATE CONTENT_TABLE
         SET title = ?,
-            category = ?,
+            category_idx = ?,
             updated_time = ?,
             content = ?
         WHERE 
@@ -125,7 +125,7 @@ class db_control_sql:
         SELECT  CONTENT.content_idx, 
                 CONTENT.user_idx, 
                 CONTENT.title, 
-                CONTENT.category, 
+                CATE.category, 
                 CONTENT.created_time, 
                 CONTENT.updated_time,
                 CONTENT.content,
@@ -136,24 +136,30 @@ class db_control_sql:
                 SELECT  content_idx, 
                         user_idx, 
                         title, 
-                        category, 
+                        category_idx, 
                         created_time, 
                         updated_time,
                         content,
                         view_count
-                FROM CONTENT_TABLE
-                WHERE 1=1
-                   {% if category %}
-                        AND category = "{{category}}"
-                   {% endif %}                                                                                                                            
+                FROM CONTENT_TABLE                                                                                                                            
             ) AS CONTENT,
             (
                 SELECT  user_idx,
                         user_id   
                 FROM USER_TABLE
-            ) AS USER
+            ) AS USER,
+            (
+                SELECT category_idx, 
+                       category
+                FROM CATEGORY_TABLE  
+                WHERE 1=1                                    
+                    {% if category %}
+                        AND category = "{{category}}"
+                    {% endif %}                                                                       
+            ) AS CATE
         WHERE 1=1
             AND CONTENT.user_idx = USER.user_idx 
+            AND CONTENT.category_idx = CATE.category_idx
         ORDER BY CONTENT.created_time DESC 
         LIMIT {{limit}}
         """ )  
@@ -162,7 +168,7 @@ class db_control_sql:
         SELECT   CONTENT.content_idx, 
                  CONTENT.user_idx, 
                  CONTENT.title, 
-                 CONTENT.category, 
+                 CATE.category, 
                  CONTENT.created_time,
                  CONTENT.updated_time, 
                  CONTENT.content,
@@ -172,7 +178,7 @@ class db_control_sql:
                 SELECT  content_idx, 
                         user_idx, 
                         title, 
-                        category, 
+                        category_idx, 
                         created_time, 
                         updated_time,
                         content,
@@ -185,9 +191,16 @@ class db_control_sql:
                 SELECT  user_idx,
                         user_id   
                 FROM USER_TABLE                                                                                  
-            ) AS USER     
+            ) AS USER,
+            (
+                SELECT category_idx,
+                        category
+                FROM CATEGORY_TABLE
+                WHERE 1=1                                   
+            ) AS CATE  
         WHERE 1=1
-            AND CONTENT.user_idx = USER.user_idx                                                                                                                                            
+            AND CONTENT.user_idx = USER.user_idx 
+            AND CONTENT.category_idx = CATE.category_idx                                                                                                                                           
         
         """)
 
@@ -202,8 +215,8 @@ class db_control_sql:
         SELECT COUNT(CONTENT_IDX)
         FROM CONTENT_TABLE
         WHERE 1=1
-            {% if category %}  
-               AND category = "{{category}}"                                      
+            {% if category_idx %}  
+               AND category_idx = "{{category_idx}}"                                      
             {% endif %}                                           
         """)
 
@@ -473,7 +486,38 @@ class db_control_sql:
            AND category_idx = {{category}}                                                                                                                                
         """)
 
-        self.SQL_GET_CATEGORY_COUNT = jinja2.Template("""
-        SELECT count(category)
-        FROM CATEGORY_TABLE                                              
+        self.SQL_GET_CATEGORY_ALL = """
+        SELECT category_idx, category
+        FROM CATEGORY_TABLE    
+        WHERE 1=1
+        ORDER BY category_idx                                          
+        """
+
+        self.SQL_MAX_CATEGORY_IDX = """
+        SELECT max(category_idx)
+        FROM CATEGORY_TABLE
+        """
+
+        self.SQL_PUSH_CATEGORY = jinja2.Template("""
+        INSERT 
+        INTO CATEGORY_TABLE (
+        category_idx,
+        category
+            ) VALUES (
+        {{category_idx}},
+        "{{category}}"
+        )
+        """)
+
+        self.SQL_UPDATE_CATEGORY = jinja2.Template("""
+        UPDATE CATEGORY_TABLE
+        SET category = "{{category}}"
+        WHERE category_idx = {{category_idx}}
+        """)
+
+        self.SQL_GET_CATEGORY_IDX_WITH_CATEGORY = jinja2.Template("""
+        SELECT category_idx
+        FROM CATEGORY_TABLE
+        WHERE 1=1
+           AND category = "{{category}}"
         """)

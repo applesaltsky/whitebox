@@ -98,9 +98,9 @@
                 <div>
                     <a href="/">Recent</a>
                 </div>
-                {% for category in category_list %}
+                {% for cate in category_list %}
                 <div>
-                    <a href="/?category={{category}}"> {{category}}</a>
+                    <a href="/?category={{cate['category']}}"> {{cate['category']}}</a>
                 </div>
                 {% endfor %}
             </div>

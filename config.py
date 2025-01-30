@@ -68,7 +68,7 @@ class Config:
         self.limit_admin_panel_view = 1000
 
         #config for logging
-        self.log_timekey_format = "%Y%m%d%H%M%S%f"
+        self.log_timekey_format = "%Y%m%d%H%M%S"
         self.log_expiration_date = 90
 
         self.category_list = ['DataScience','Backend','ComputerScience']

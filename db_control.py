@@ -41,7 +41,7 @@ class DBController(db_control_sql):
                     content_idx:int, 
                     user_idx:int,
                     title:str, 
-                    category:str,
+                    category_idx:int,
                     created_time:str,
                     updated_time:str,
                     content:str):
@@ -52,7 +52,7 @@ class DBController(db_control_sql):
             cursor.execute(SQL,(content_idx,
                                 user_idx,
                                 title,
-                                category,
+                                category_idx,
                                 created_time,
                                 updated_time,
                                 content,
@@ -62,14 +62,14 @@ class DBController(db_control_sql):
     def update_content(self, 
                        content_idx:int,
                        title:str,
-                       category:str,
+                       category_idx:int,
                        updated_time:str,
                        content:str):
         SQL = self.SQL_UPDATE_CONTENT
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             cursor.execute(SQL,(title,
-                                category,
+                                category_idx,
                                 updated_time,
                                 content,
                                 content_idx))
@@ -94,8 +94,8 @@ class DBController(db_control_sql):
             else:
                 return rst
             
-    def get_content_count(self,category:str)->int:
-        SQL = self.SQL_GET_CONTENT_COUNT.render(**{"category":category})
+    def get_content_count(self,category_idx:str)->int:
+        SQL = self.SQL_GET_CONTENT_COUNT.render(**{"category_idx":category_idx})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             for i in cursor.execute(SQL):
@@ -548,9 +548,60 @@ class DBController(db_control_sql):
             cursor.execute(SQL)
             conn.commit()
 
+    def push_category(self,category_idx:int, category:str):
+        SQL = self.SQL_PUSH_CATEGORY.render(**{'category_idx':category_idx,
+                                               'category':category})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL)
+            conn.commit()    
 
+    def update_category(self,category_idx:int, category:str):
+        SQL = self.SQL_UPDATE_CATEGORY.render(**{'category':category,
+                                                 'category_idx':category_idx})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            cursor.execute(SQL)
+            conn.commit()  
+
+    def get_max_category_idx(self)->int:
+        ''' 
+        return integer
+        if category table is empty, return -1
+        '''
+
+        SQL = self.SQL_MAX_CATEGORY_IDX
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+
+            for i in cursor.execute(SQL):
+                rst = i[0]
+                break
+
+            NO_CONTENT = rst is None
+            if NO_CONTENT:
+                return -1
+            else:
+                return rst
             
+    def get_category_list(self)->list[dict]:
+        SQL = self.SQL_GET_CATEGORY_ALL
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            rst = []
+            for category_idx, category in cursor.execute(SQL):
+                rst.append({'category_idx':category_idx,
+                            'category':category})
+        return rst
 
-
-
-
+    def get_category_idx_with_category(self,category:str|None)->int|None:
+        if category is None:
+            return None
+        SQL = self.SQL_GET_CATEGORY_IDX_WITH_CATEGORY.render(**{'category':category})
+        rtn = None
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            for category_idx in cursor.execute(SQL):
+                rtn = category_idx
+                break
+        return rtn

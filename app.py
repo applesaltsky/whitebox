@@ -35,7 +35,7 @@ fs_controller = FSController()
 db_controller = DBController()
 db_controller.init_db(db_path=config.PATH_DB)
 
-#push one admin to user db
+#push one admin to user table
 empty_user_db = checker.is_empty_user_db(db_controller)
 if empty_user_db:
     admin_user_info = {
@@ -51,7 +51,18 @@ if empty_user_db:
                     user_password_question = admin_user_info['user_password_question'],
                     user_password_answer = admin_user_info['user_password_answer'],
                     created_time=datetime.now(),
-                    previlage='admin')    
+                    previlage='admin')  
+
+#push one category to category table  
+empty_category_db = checker.is_empty_category_db(db_controller)
+if empty_category_db:
+    default_category_info = {
+        'category_idx':0,
+        'category':'Default'
+    }
+    db_controller.push_category(category_idx = default_category_info['category_idx'],
+                                category = default_category_info['category']
+                                )
 
 #create fastapi application instance
 app = FastAPI()
@@ -73,8 +84,9 @@ def add_logger(request:Request, call_next):
         log_idx = db_controller.get_max_log_idx() + 1
 
         logging_timekey = datetime.now()
+        
         db_controller.push_log(log_idx=log_idx,
-                               timekey=logging_timekey.strftime(config.log_timekey_format),
+                               timekey=int(logging_timekey.strftime(config.log_timekey_format)),
                                url=str(request.url),
                                method=request.method,
                                proc_time=round(process_time,4),
@@ -182,16 +194,20 @@ def home_handler(session_id:str = Cookie(default='-'),
                                                   page=page,
                                                   row_cnt=row_cnt
                                                   )
-    content_count = db_controller.get_content_count(category=category)
-
+    
+    category_idx = db_controller.get_category_idx_with_category(category)
+    content_count = db_controller.get_content_count(category_idx=category_idx)
+    print(content_count)
     page_list = []
     for i in range(config.max_page_count):
         if i * row_cnt < content_count:
             page_list.append(i+1)
 
+    category_list = db_controller.get_category_list()
+    
     body = jinja2.Template(body).render(**{"content_list":content_list,
                                            "user_info":user_info,
-                                           "category_list":config.category_list,
+                                           "category_list":category_list,
                                            'category':category,
                                            'page_list':page_list,
                                            'page':page,
@@ -247,12 +263,14 @@ def submit_content_form_handler(session_id:str = Cookie(default='-'),
             updated_time = datetime.now().strftime(config.time_format) 
         else:  
             return RedirectResponse(url='/')
+        
+    category_list = db_controller.get_category_list()
 
     body = jinja2.Template(body).render(**{
                                            "content_idx":content_idx,
                                            'content':content,
                                            "user_info":user_info,
-                                           'category_list':config.category_list,
+                                           'category_list':category_list,
                                            'view_count':view_count,
                                            'created_time':created_time,
                                            'updated_time':updated_time,
@@ -265,7 +283,7 @@ def submit_content_form_handler(session_id:str = Cookie(default='-'),
 
 @app.post('/content')
 def submit_content_request_handler(title:str = Form(default='test'), 
-                                   category:str=Form(default='test'), 
+                                   category_idx:int|None=Form(default=None), 
                                    content:str = Form(default='test'),
                                    session_id:str = Cookie(default='-'),
                                    content_idx:int|None = Form(default=None)):
@@ -303,7 +321,7 @@ def submit_content_request_handler(title:str = Form(default='test'),
         db_controller.push_content(content_idx = content_idx, 
                                user_idx = user_info['user_idx'], 
                                title = title, 
-                               category = category,
+                               category_idx = category_idx,
                                created_time = created_time,
                                updated_time = created_time,
                                content = content)
@@ -319,7 +337,7 @@ def submit_content_request_handler(title:str = Form(default='test'),
         updated_time = datetime.now().strftime(config.time_format)
         db_controller.update_content(content_idx=content_idx,
                                      title=title,
-                                     category=category,
+                                     category_idx=category_idx,
                                      updated_time=updated_time,
                                      content=content)
 
@@ -405,8 +423,6 @@ def serve_create_user_page(session_id:str|None = Cookie(default=None),
     is_login_client = checker.is_login_client(session_id)
     if is_login_client:
         #logout and redirect to home
-        print('is login_client')
-        print(session_id)
         response = RedirectResponse('/')
         response.set_cookie(key='session_id',
                         value="-",
