@@ -379,7 +379,7 @@ def delete_comment(comment_idx:int,session_id:str|None=Cookie(default=None)):
 
 
 @app.get('/user')
-def serve_create_user_page(session_id:str = Cookie(default='-'),
+def serve_create_user_page(session_id:str|None = Cookie(default=None),
                            error_message:str = Query(default=' ')):
     '''
     serve create account form
@@ -387,6 +387,8 @@ def serve_create_user_page(session_id:str = Cookie(default='-'),
     is_login_client = checker.is_login_client(session_id)
     if is_login_client:
         #logout and redirect to home
+        print('is login_client')
+        print(session_id)
         response = RedirectResponse('/')
         response.set_cookie(key='session_id',
                         value="-",
@@ -538,11 +540,18 @@ def handle_edit_user_request(session_id:str = Cookie(default='-'),
         
         return response
     
+    updated_user_id = user_id != user_id_new
+    if updated_user_id:
+        validation, error_message = checker.valid_user_id(db_controller,user_id_new)
+        if validation is not True:
+            status_code = 303  #see other
+            return RedirectResponse(url=f'/edit/user?error_message={error_message}', status_code=status_code)
+    
     validation, error_message = checker.valid_user_password(user_password_new,user_password_new_confirm)
-    if not validation:
-        status_code = 303 #see other
-        response = RedirectResponse(f'/edit/user?error_message={error_message}',status_code=status_code)
-        return response
+    if validation is not True:
+        status_code = 303  #see other
+        return RedirectResponse(url=f'/edit/user?error_message={error_message}', status_code=status_code)
+    
     
     user_info = session_controller.get_session(session_id)
     user_idx = user_info['user_idx']
@@ -577,7 +586,7 @@ def handle_edit_user_request(session_id:str = Cookie(default='-'),
 def push_comment(content_idx:int, 
                  user_idx:int|None=Form(default=None),
                  comment:str|None=Form(default=None),
-                 session_id:str=Cookie(default='-')
+                 session_id:str|None=Cookie(default=None)
                  ):
     is_login_client = checker.is_login_client(session_id)
     if not is_login_client:
@@ -712,7 +721,7 @@ def serve_image(file_name:str):
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.get('/admin/panel')
-def serve_admin_panel(session_id:str = Cookie(default='-')):
+def serve_admin_panel(session_id:str|None = Cookie(default=None)):
     if not checker.is_login_client(session_id):
         status_code = 307
         return RedirectResponse(url='/',status_code=status_code)
@@ -739,7 +748,7 @@ def serve_admin_panel(session_id:str = Cookie(default='-')):
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/admin/panel')
-def serve_admin_panel(session_id:str = Cookie(default='-'),
+def serve_admin_panel(session_id:str|None = Cookie(default=None),
                       sql:str|None = Form(default=None)):
     if not checker.is_login_client(session_id):
         status_code = 307
