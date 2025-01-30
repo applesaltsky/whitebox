@@ -28,6 +28,8 @@ class Config:
         self.PATH_ENV = Path(self.PATH_PROJECT,'.env')
         dotenv.load_dotenv(str(self.PATH_ENV))
 
+        self.PATH_BCRYPT_SALT = Path(self.PATH_PROJECT,'salt.pickle')
+
         folders = [
                     self.PATH_DB.parent, 
                     self.PATH_TEMPLATES, 
@@ -50,15 +52,14 @@ class Config:
             self.reload = True
 
         #config write content previlage
-        self.write_content_previlage = ['admin','user']  #'admin', 'user'
+        #self.write_content_previlage = ['admin','user']  #admin, normal user can write content
+        self.write_content_previlage = ['admin']          #only admin can write content
 
         #config session
         self.max_session_age = 3600 * 12  #sec 
 
         #Delete unused image function is executed every {self.cycle_delete_unused_image} requests.
         self.cycle_delete_unused_image = 1000
-
-        
 
         #page config on home.html
         self.max_page_count = 10 
@@ -71,7 +72,7 @@ class Config:
         self.log_timekey_format = "%Y%m%d%H%M%S"
         self.log_expiration_date = 90
 
-        self.category_list = ['DataScience','Backend','ComputerScience']
+        self.default_category_list = ['DataScience','Backend','ComputerScience']
 
         self.admin_id = os.getenv("ADMIN_ID")
         self.admin_pw = os.getenv("ADMIN_PW")

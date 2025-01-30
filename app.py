@@ -4,6 +4,7 @@ from db_control import DBController
 from session_control import SessionController
 from checker import Checker
 from fs_control import FSController
+from encrypter import Encrypter
 
 #import external package
 from fastapi import FastAPI, Response, Request, Form, Query, Cookie, UploadFile
@@ -11,14 +12,13 @@ from fastapi.responses import RedirectResponse
 from PIL import Image
 import uvicorn, jinja2, psutil
 
-
 #import standard package
 from uuid import uuid4
 from datetime import datetime
 from pathlib import Path
 from io import BytesIO
 from threading import Lock
-import time,re
+import time, re, os
 
 
 #set config and utility func
@@ -35,7 +35,13 @@ fs_controller = FSController()
 db_controller = DBController()
 db_controller.init_db(db_path=config.PATH_DB)
 
-#push one admin to user table
+#init encrypter
+encrypter = Encrypter()
+encrypter.init_encrypter(PATH_BCRYPT_SALT=config.PATH_BCRYPT_SALT)
+
+
+
+#push admin to user table
 empty_user_db = checker.is_empty_user_db(db_controller)
 if empty_user_db:
     admin_user_info = {
@@ -53,16 +59,19 @@ if empty_user_db:
                     created_time=datetime.now(),
                     previlage='admin')  
 
-#push one category to category table  
+
+
+#push default category to category table  
 empty_category_db = checker.is_empty_category_db(db_controller)
 if empty_category_db:
-    default_category_info = {
-        'category_idx':0,
-        'category':'Default'
-    }
-    db_controller.push_category(category_idx = default_category_info['category_idx'],
-                                category = default_category_info['category']
-                                )
+    for idx, category in enumerate(config.default_category_list):
+        default_category_info = {
+            'category_idx': idx,
+            'category':category
+        }
+        db_controller.push_category(category_idx = default_category_info['category_idx'],
+                                    category = default_category_info['category']
+                                    )
 
 #create fastapi application instance
 app = FastAPI()
@@ -197,7 +206,7 @@ def home_handler(session_id:str = Cookie(default='-'),
     
     category_idx = db_controller.get_category_idx_with_category(category)
     content_count = db_controller.get_content_count(category_idx=category_idx)
-    print(content_count)
+    
     page_list = []
     for i in range(config.max_page_count):
         if i * row_cnt < content_count:
@@ -213,7 +222,8 @@ def home_handler(session_id:str = Cookie(default='-'),
                                            'page':page,
                                            "row_cnt_list":config.row_cnt_list,
                                            "row_cnt":row_cnt,
-                                           "global_title":config.global_title
+                                           "global_title":config.global_title,
+                                           'write_content_previlage':config.write_content_previlage
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
@@ -234,11 +244,13 @@ def submit_content_form_handler(session_id:str = Cookie(default='-'),
     if not is_login_client:
         return RedirectResponse(url='/')
     
+    user_info = session_controller.get_session(session_id)
+    has_write_content_previlage = checker.has_write_content_previlage(user_info,config)
+    if not has_write_content_previlage:
+        return RedirectResponse(url='/')
+    
     with open(Path(config.PATH_TEMPLATES,'content_edit.html'),'rt',encoding='utf-8') as f:
         body = f.read()
-
-
-    user_info = session_controller.get_session(session_id)
 
     create_content = content_idx is None
     update_content = content_idx is not None
@@ -292,6 +304,10 @@ def submit_content_request_handler(title:str = Form(default='test'),
     if not is_login_client:
         return RedirectResponse(url='/')
     
+    user_info = session_controller.get_session(session_id)
+    has_write_content_previlage = checker.has_write_content_previlage(user_info,config)
+    if not has_write_content_previlage:
+        return RedirectResponse(url='/')
     
     def get_image_list(content:str)->list[str]:
         pattern = '<img src="/image/.*/>'
@@ -304,8 +320,6 @@ def submit_content_request_handler(title:str = Form(default='test'),
             i:str = i + '.webp'
             img_files.append(i)
         return img_files
-    
-    user_info = session_controller.get_session(session_id)
 
     create_content = content_idx is None
     update_content = content_idx is not None

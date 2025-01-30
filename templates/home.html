@@ -54,11 +54,13 @@
                             <button type="submit">logout</button>
                         </div>
                     </form>
+                    {% if user_info['previlage'] in write_content_previlage %}
                     <form action="/content" method="get">
                         <div>
                             <button type="submit">write content</button>
                         </div>
                     </form>
+                    {% endif %}
                     <form action="/edit/user" method="get">
                         <div>
                             <button type="submit">modify user info</button>

@@ -74,3 +74,7 @@ class Checker:
     def is_empty_category_db(self,db_controller):
         return db_controller.get_max_category_idx() == -1
 
+    def has_write_content_previlage(self,user_info,config):
+        if user_info is None:
+            return False
+        return user_info['previlage'] in config.write_content_previlage
