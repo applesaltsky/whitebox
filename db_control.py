@@ -96,19 +96,24 @@ class DBController(db_control_sql):
             
     def get_content_count(self,category_idx:str)->int:
         SQL = self.SQL_GET_CONTENT_COUNT.render(**{"category_idx":category_idx})
+        print('get content_count sql', SQL)
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             for i in cursor.execute(SQL):
                 return i[0]
             
-    def get_content_list(self,category:str=None,page:int|None=None,row_cnt:int|None=None)->list[dict]:
+    def get_content_list(self,category:str=None,
+                         page:int|None=None,
+                         row_cnt:int|None=None,
+                         search_pattern:str|None=None
+                        )->list[dict]:
         '''
         page 1 / row cnt 5  -> get 1,2,3,4,5
         page 3 / row cnt 10 -> get 21~30
         '''
         start_cnt = (page-1)*row_cnt + 1
         end_cnt = page*row_cnt
-        SQL = self.SQL_GET_CONTENT_LIST.render(**{'limit':end_cnt,'category':category})
+        SQL = self.SQL_GET_CONTENT_LIST.render(**{'limit':end_cnt,'category':category,'search_pattern':search_pattern})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             rst = []
@@ -297,13 +302,14 @@ class DBController(db_control_sql):
                     user_id:str,
                     user_password:str, 
                     user_password_question:str, 
-                    user_password_answer:str):
+                    user_password_answer:str,
+                    encrypter):
         SQL = self.SQL_UPDATE_USER
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             cursor.execute(SQL,(
                                 user_id,
-                                user_password,
+                                encrypter.encrypt(user_password),
                                 user_password_question,
                                 user_password_answer,
                                 user_idx,
@@ -602,6 +608,6 @@ class DBController(db_control_sql):
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             for category_idx in cursor.execute(SQL):
-                rtn = category_idx
+                rtn = category_idx[0]
                 break
         return rtn

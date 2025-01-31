@@ -55,7 +55,8 @@ if empty_user_db:
                     user_password_question = admin_user_info['user_password_question'],
                     user_password_answer = admin_user_info['user_password_answer'],
                     created_time=datetime.now(),
-                    previlage='admin')  
+                    previlage='admin',
+                    encrypter=encrypter)  
 
 
 
@@ -191,7 +192,8 @@ async def request_counter_middleware(request:Request, call_next):
 def home_handler(session_id:str = Cookie(default='-'),
                  category:str|None=Query(default=None),
                  page:int=Query(default=1),
-                 row_cnt:int=Query(default=5)
+                 row_cnt:int=Query(default=5),
+                 search_pattern:str|None=Query(default=None)
                  ):
     template = 'home.html'
     with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
@@ -201,17 +203,16 @@ def home_handler(session_id:str = Cookie(default='-'),
 
     content_list = db_controller.get_content_list(category=category,
                                                   page=page,
-                                                  row_cnt=row_cnt
+                                                  row_cnt=row_cnt,
+                                                  search_pattern=search_pattern
                                                   )
     
     category_idx = db_controller.get_category_idx_with_category(category)
     content_count = db_controller.get_content_count(category_idx=category_idx)
-    
     page_list = []
     for i in range(config.max_page_count):
         if i * row_cnt < content_count:
             page_list.append(i+1)
-
     category_list = db_controller.get_category_list()
     
     body = jinja2.Template(body).render(**{"content_list":content_list,
@@ -580,7 +581,7 @@ def handle_edit_user_request(session_id:str = Cookie(default='-'),
                               ):
     
     user_info_in_session = session_controller.get_session(session_id)
-    user_info_in_db = db_controller.get_user_with_id_password(user_id,user_password)
+    user_info_in_db = db_controller.get_user_with_id_password(user_id,user_password,encrypter)
 
     if not checker.is_same_user_info_db_and_session(user_info_in_db,user_info_in_session):
         error_message = 'password confirm failed. please, check your input.'
@@ -610,7 +611,8 @@ def handle_edit_user_request(session_id:str = Cookie(default='-'),
                               user_id_new,
                               user_password_new,
                               user_password_question,
-                              user_password_answer)
+                              user_password_answer,
+                              encrypter)
     
     #update session
     session_controller.delete_session(session_id)
@@ -665,7 +667,7 @@ def serve_user_login_form(error_message:str = Query(default=' ')):
 
 @app.post('/login')
 def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=Form(default='-')):
-    user_info = db_controller.get_user_with_id_password(user_id,user_password)
+    user_info = db_controller.get_user_with_id_password(user_id,user_password,encrypter)
     is_valid_user_info = checker.is_valid_user_info(user_info)
     if not is_valid_user_info:
         status_code = 303

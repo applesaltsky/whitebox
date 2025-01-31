@@ -1,6 +1,6 @@
 1. make admin pannel -> done
 2. make created by -> done
-3. make search content
+3. make search content -> gogo
 4. make finder password -> done
 4.1 make change password -> done
 5. make content table index -> done
@@ -10,4 +10,4 @@
 9. make logging db -> done
 10. make english japanese chinese translation
 11. adjust html for mobile
-12. password security -> gogo
+12. password security -> done

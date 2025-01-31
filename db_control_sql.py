@@ -141,7 +141,15 @@ class db_control_sql:
                         updated_time,
                         content,
                         view_count
-                FROM CONTENT_TABLE                                                                                                                            
+                FROM CONTENT_TABLE 
+                WHERE 1=1
+                    {% if search_pattern %}
+                        and ( 
+                             1=2
+                             or title like "%{{search_pattern}}%"
+                             or content like "%{{search_pattern}}%"                 
+                            )
+                    {% endif %}                                                                                                                                                               
             ) AS CONTENT,
             (
                 SELECT  user_idx,
@@ -216,7 +224,7 @@ class db_control_sql:
         FROM CONTENT_TABLE
         WHERE 1=1
             {% if category_idx %}  
-               AND category_idx = "{{category_idx}}"                                      
+               AND category_idx = {{category_idx}}                                     
             {% endif %}                                           
         """)
 
@@ -477,13 +485,6 @@ class db_control_sql:
         FROM LOGGING_TABLE
         WHERE 1=1
             AND timekey < {{timekey}}
-        """)
-
-        self.SQL_GET_CATEGORY_WITH_IDX = jinja2.Template("""
-        SELECT category
-        FROM CATEGORY_TABLE
-        WHERE 1=1
-           AND category_idx = {{category}}                                                                                                                                
         """)
 
         self.SQL_GET_CATEGORY_ALL = """

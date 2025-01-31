@@ -136,6 +136,9 @@
                         {% if category %}
                             <input style="display:none" type="text" name = "category" value="{{category}}"></input>
                         {% endif %}
+                        {% if search_pattern %}
+                            <input style="display:none" type="text" name = "search_pattern" value="{{search_pattern}}"></input>
+                        {% endif %}
                         <input style="display:none" type="text" name = "page" value="{{page}}"></input>
                         <select id="row_cnt_select" name="row_cnt">
                             {% for row_cnt_option in row_cnt_list %}
@@ -154,13 +157,25 @@
                 <div id="page_select">              
                     {% for page_select in page_list %}
                         {% if category %}
+                            {% if search_pattern %}
+                            <a href="/?category={{category}}&search_pattern={{search_pattern}}&page={{page_select}}&row_cnt={{row_cnt}}">
+                            {% else %}
                             <a href="/?category={{category}}&page={{page_select}}&row_cnt={{row_cnt}}">
+                            {% endif %}  
+                        {% elif search_pattern %}
+                            <a href="/?search_pattern={{search_pattern}}&page={{page_select}}&row_cnt={{row_cnt}}">
                         {% else %}  
                             <a href="/?page={{page_select}}&row_cnt={{row_cnt}}">
                         {% endif %}
                                 {{page_select}}
                             </a>
                     {% endfor %}
+                </div>
+                <div id="search_pattern_input">
+                    <form action="/" method="get">
+                        <input type="text" name="search_pattern"></input>
+                        <button type="submit">search</button>
+                    </form>
                 </div>
             </div>
             <div id="created_by">
