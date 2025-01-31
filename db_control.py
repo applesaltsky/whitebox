@@ -219,11 +219,11 @@ class DBController(db_control_sql):
                cnt += 1
         return cnt > 0
     
-    def get_user_with_id_password(self,user_id:str,user_password:str):
+    def get_user_with_id_password(self,user_id:str,user_password:str,encrypter):
         '''
         this function makes user_info in session
         '''
-        SQL = self.SQL_FIND_USER_WITH_ID_PW.render({'user_id':user_id,'user_password':user_password})
+        SQL = self.SQL_FIND_USER_WITH_ID_PW.render({'user_id':user_id,'user_password':encrypter.encrypt(user_password)})
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()  
             rst = None
@@ -277,13 +277,13 @@ class DBController(db_control_sql):
                             })
             return rst
 
-    def push_user(self,user_idx:int,user_id:str, user_password:str,user_password_question:str, user_password_answer:str, created_time:datetime, previlage:str):
+    def push_user(self,user_idx:int,user_id:str, user_password:str,user_password_question:str, user_password_answer:str, created_time:datetime, previlage:str, encrypter):
         SQL = self.SQL_PUSH_USER
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             cursor.execute(SQL,(user_idx,
                                 user_id,
-                                user_password,
+                                encrypter.encrypt(user_password),
                                 user_password_question,
                                 user_password_answer,
                                 created_time,
@@ -361,11 +361,11 @@ class DBController(db_control_sql):
                 rtn = user_idx
         return rtn  
     
-    def update_user_password(self,user_idx:int, user_password:str)->int:
+    def update_user_password(self,user_idx:int, user_password:str, encrypter)->int:
         SQL = self.SQL_UPDATE_USER_PASSWORD
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
-            cursor.execute(SQL,(user_password,user_idx))
+            cursor.execute(SQL,(encrypter.encrypt(user_password),user_idx))
             conn.commit()
 
     def get_image_all(self)->list[str]:

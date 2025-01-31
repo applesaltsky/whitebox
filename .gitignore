@@ -1,7 +1,6 @@
 virt
 .env
-__pycache__
-.pyc
-.pem
-.pickle
-.db
+
+
+*.pem
+

@@ -13,17 +13,15 @@ class Config:
     def __init__(self):
         self.PATH_APP_PY =  Path(__file__)
         self.PATH_PROJECT = self.PATH_APP_PY.parent
-        self.PATH_DB = Path(self.PATH_PROJECT,'databases','main.db')
-        self.PATH_DB_TMP = Path(self.PATH_PROJECT,'databases','tmp.db')
-        self.NAME_CONTENT_TABLE = 'CONTENT_TABLE'
-        self.NAME_COMMENT_TABLE = 'COMMENT_TABLE'
-        self.NAME_USER_TABLE = 'USER_TABLE'
-        self.NAME_IMAGE_TABLE = 'IMAGE_TABLE'
+
         self.PATH_TEMPLATES = Path(self.PATH_PROJECT,'templates')
         self.PATH_STATIC = Path(self.PATH_PROJECT,'static')
         self.PATH_JAVASCRIPT = Path(self.PATH_STATIC,'js')
         self.PATH_CSS = Path(self.PATH_STATIC,'css')
         self.PATH_IMAGE = Path(self.PATH_STATIC,'images')
+
+        self.PATH_DB = Path(self.PATH_PROJECT,'databases','main.db')
+        self.PATH_DB_TMP = Path(self.PATH_PROJECT,'databases','tmp.db')
 
         self.PATH_ENV = Path(self.PATH_PROJECT,'.env')
         dotenv.load_dotenv(str(self.PATH_ENV))
@@ -59,7 +57,8 @@ class Config:
         self.max_session_age = 3600 * 12  #sec 
 
         #Delete unused image function is executed every {self.cycle_delete_unused_image} requests.
-        self.cycle_delete_unused_image = 1000
+        self.cycle_delete_unused_image = 1024
+        self.cycle_delete_old_log = 1024
 
         #page config on home.html
         self.max_page_count = 10 

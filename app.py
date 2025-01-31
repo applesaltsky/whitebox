@@ -39,8 +39,6 @@ db_controller.init_db(db_path=config.PATH_DB)
 encrypter = Encrypter()
 encrypter.init_encrypter(PATH_BCRYPT_SALT=config.PATH_BCRYPT_SALT)
 
-
-
 #push admin to user table
 empty_user_db = checker.is_empty_user_db(db_controller)
 if empty_user_db:
@@ -179,6 +177,8 @@ async def request_counter_middleware(request:Request, call_next):
         request_counter += 1
         if request_counter % config.cycle_delete_unused_image == 0:
             fs_controller.delete_unused_image(db_controller,config.PATH_IMAGE)
+        
+        if request_counter % config.cycle_delete_old_log == 0:
             db_controller.delete_old_log(config.log_expiration_date,config.log_timekey_format)
 
         if request_counter >= MAX_REQUEST_COUNTER:
@@ -478,7 +478,8 @@ def create_user_request(user_id:str=Form(default='-'),
                             user_password_question=user_password_question,
                             user_password_answer=user_password_answer,
                             created_time=datetime.now(),
-                            previlage='user')
+                            previlage='user',
+                            encrypter=encrypter)
     status_code = 303  #see other
     return RedirectResponse(url='/login', status_code=status_code)
 
@@ -530,7 +531,7 @@ def serve_find_user_page(user_id:str|None = Form(default=None),
         if user_id_and_answer_is_correct: 
             user_idx = db_controller.get_user_idx_with_user_id(user_id)
             temp_user_password = str(uuid4())
-            db_controller.update_user_password(user_idx, temp_user_password)   
+            db_controller.update_user_password(user_idx, temp_user_password, encrypter)   
 
     body = jinja2.Template(body).render(**{
                                            'error_message':error_message,
