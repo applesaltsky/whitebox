@@ -37,6 +37,9 @@
             <div> {{error_message}} </div>
             <div id='user_input'>
                 <form action="/login" method="post">
+                    {% if content_idx %}
+                    <input style="display:none" name="content_idx" value="{{content_idx}}"></input>
+                    {% endif %}
                     <div class='user_input_form'> 
                         <div class='user_input_form_category'>
                             ID

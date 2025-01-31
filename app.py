@@ -257,10 +257,6 @@ def home_handler(session_id:str = Cookie(default='-'),
     if not is_page_in_last_batch:
         next_button_page = page_batch_list[page_batch_idx + 1][0]
     
-    print(page)
-    print(page_batch_list)
-    print(is_page_in_last_batch)
-
     category_list = db_controller.get_category_list()
     body = jinja2.Template(body).render(**{"content_list":content_list,
                                            "user_info":user_info,
@@ -431,10 +427,12 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
         comment_list_tmp.append(comment)
 
     comment_list = comment_list_tmp
-    body = jinja2.Template(body).render(**{'content':content,
-                                           'user_info':user_info,
-                                           'comment_list':comment_list,
-                                           'global_title':config.global_title
+    body = jinja2.Template(body).render(**{
+                                            'content_idx':content_idx,
+                                            'content':content,
+                                            'user_info':user_info,
+                                            'comment_list':comment_list,
+                                            'global_title':config.global_title
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
@@ -482,7 +480,8 @@ def delete_comment(comment_idx:int,session_id:str|None=Cookie(default=None)):
 
 @app.get('/user')
 def serve_create_user_page(session_id:str|None = Cookie(default=None),
-                           error_message:str = Query(default=' ')):
+                           error_message:str = Query(default=' '),
+                           content_idx:int|None = Query(default=None)):
     '''
     serve create account form
     '''
@@ -500,19 +499,22 @@ def serve_create_user_page(session_id:str|None = Cookie(default=None),
     with open(Path(config.PATH_TEMPLATES,'user.html'),'rt',encoding='utf-8') as f:
         body = f.read()
     body = jinja2.Template(body).render(**{'error_message':error_message.replace('_',' '),
-                                           'global_title':config.global_title
+                                           'global_title':config.global_title,
+                                           'content_idx':content_idx
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/user')
-def create_user_request(user_id:str=Form(default='-'),
+def create_user_request(        
+                                content_idx:int|None=Form(default=None),
+                                user_id:str=Form(default='-'),
                                 user_password:str=Form(default='-'),
                                 user_password_confirm:str=Form(default='-'),
                                 user_password_question:str=Form(default='-'),
                                 user_password_answer:str=Form(default='-'),
-                                ):
+                        ):
     '''
     handle create account request
     '''
@@ -533,7 +535,10 @@ def create_user_request(user_id:str=Form(default='-'),
                             previlage='user',
                             encrypter=encrypter)
     status_code = 303  #see other
-    return RedirectResponse(url='/login', status_code=status_code)
+    if content_idx is not None:
+        return RedirectResponse(url=f'/login?content_idx={content_idx}', status_code=status_code)
+    else:
+        return RedirectResponse(url='/login', status_code=status_code)
 
 @app.get('/find/user')
 def serve_find_user_page(error_message:str|None = Query(None)
@@ -705,19 +710,25 @@ def push_comment(content_idx:int,
     return RedirectResponse(f'/content/{content_idx}', status_code=status_code)
 
 @app.get('/login')
-def serve_user_login_form(error_message:str = Query(default=' ')):
+def serve_user_login_form(
+                            error_message:str = Query(default=' '),
+                            content_idx:int|None = Query(default=None)
+                         ):
     template = 'login.html'
     with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
     body = jinja2.Template(body).render(**{'error_message':error_message.replace("_"," "),
-                                           'global_title':config.global_title
+                                           'global_title':config.global_title,
+                                           'content_idx':content_idx
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 @app.post('/login')
-def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=Form(default='-')):
+def user_login_requests_handler(content_idx:int|None = Form(default=None),
+                                user_id:str=Form(default='-'),
+                                user_password:str=Form(default='-')):
     user_info = db_controller.get_user_with_id_password(user_id,user_password,encrypter)
     is_valid_user_info = checker.is_valid_user_info(user_info)
     if not is_valid_user_info:
@@ -726,7 +737,10 @@ def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=
         return RedirectResponse(url=f'/login?error_message={error_message}', status_code=status_code)
         
     status_code = 303  #see other
-    response = RedirectResponse(url='/', status_code=status_code)
+    if content_idx is not None:
+        response = RedirectResponse(url=f'/content/{content_idx}', status_code=status_code)
+    else:
+        response = RedirectResponse(url='/', status_code=status_code)
 
     max_age_session = config.max_session_age  #sec
     session_id = session_controller.create_session_id()
@@ -738,9 +752,15 @@ def user_login_requests_handler(user_id:str=Form(default='-'),user_password:str=
     return response
 
 @app.post('/logout')
-def user_logout_requests_handler(session_id:str = Cookie(default='-')):
+def user_logout_requests_handler(   
+                                    content_idx:int|None = Form(default=None),
+                                    session_id:str = Cookie(default='-')
+                                 ):
     status_code = 303  #see other
-    response =  RedirectResponse(url='/', status_code=status_code)
+    if content_idx is not None:
+        response =  RedirectResponse(url=f'/content/{content_idx}', status_code=status_code)
+    else:
+        response =  RedirectResponse(url='/', status_code=status_code)
     response.set_cookie(key='session_id',
                         value="-",
                         max_age=0)
