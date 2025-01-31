@@ -48,9 +48,7 @@ class Config:
 
         self.time_server_started = datetime.now()
         self.time_format = "%Y-%m-%d %H:%M:%S"
-        self.reload = False
-        if is_windows():
-            self.reload = True
+        
 
         #config write content previlage
         #self.write_content_previlage = ['admin','user']  #admin, normal user can write content
@@ -79,7 +77,9 @@ class Config:
         self.admin_id = os.getenv("ADMIN_ID")
         self.admin_pw = os.getenv("ADMIN_PW")
 
-
-        self.PORT = 5000
+        self.reload = False
+        if is_windows():
+            self.reload = True
+        self.PORT = 8080
          
 
