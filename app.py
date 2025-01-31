@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from io import BytesIO
 from threading import Lock
-import time, re, os
+import time, re, math
 
 
 #set config and utility func
@@ -195,6 +195,30 @@ def home_handler(session_id:str = Cookie(default='-'),
                  row_cnt:int=Query(default=5),
                  search_pattern:str|None=Query(default=None)
                  ):
+    
+    if page <= 0 or row_cnt <=0:
+        return RedirectResponse('/')
+
+    def batch(iter,n:int=2):
+        '''
+        for i in batch([1,2,3,4,5,6,7],n=3):
+            print(i)
+
+        [1, 2, 3] [4, 5, 6] [7]
+        '''
+        rst = []
+        total_batch_cnt = math.ceil(len(iter)/n)
+        yield_batch_cnt = 1
+
+        for idx, item in enumerate(iter):
+            rst.append(item)
+            if (idx + 1) % n == 0:
+                yield rst
+                rst = []
+                yield_batch_cnt += 1
+            if ((idx + 1) == len(iter)) and (total_batch_cnt == yield_batch_cnt):
+                yield rst
+
     template = 'home.html'
     with open(Path(config.PATH_TEMPLATES,template),'rt',encoding='utf-8') as f:
         body = f.read()
@@ -209,12 +233,34 @@ def home_handler(session_id:str = Cookie(default='-'),
     
     category_idx = db_controller.get_category_idx_with_category(category)
     content_count = db_controller.get_content_count(category_idx=category_idx)
-    page_list = []
-    for i in range(config.max_page_count):
-        if i * row_cnt < content_count:
-            page_list.append(i+1)
-    category_list = db_controller.get_category_list()
+
+    total_page_count = math.ceil(content_count/row_cnt)
+    page_batch_list = [i for i in batch(list(map(lambda item : item+1,range(total_page_count))),n=config.max_page_count)]
     
+    page_list = []
+    page_batch_idx = 0
+    for page_batch in page_batch_list:
+        if page in page_batch:
+            page_list = page_batch
+            break
+        page_batch_idx += 1
+
+    is_page_in_first_batch = page in page_batch_list[0]
+    prev_button_page = -1
+    if not is_page_in_first_batch:
+        prev_button_page = page_batch_list[page_batch_idx - 1][-1]
+
+    
+    is_page_in_last_batch = page in page_batch_list[-1]
+    next_button_page = -1
+    if not is_page_in_last_batch:
+        next_button_page = page_batch_list[page_batch_idx + 1][0]
+    
+    print(page)
+    print(page_batch_list)
+    print(is_page_in_last_batch)
+
+    category_list = db_controller.get_category_list()
     body = jinja2.Template(body).render(**{"content_list":content_list,
                                            "user_info":user_info,
                                            "category_list":category_list,
@@ -224,7 +270,11 @@ def home_handler(session_id:str = Cookie(default='-'),
                                            "row_cnt_list":config.row_cnt_list,
                                            "row_cnt":row_cnt,
                                            "global_title":config.global_title,
-                                           'write_content_previlage':config.write_content_previlage
+                                           'write_content_previlage':config.write_content_previlage,
+                                           'is_page_in_first_batch':is_page_in_first_batch,
+                                           'is_page_in_last_batch':is_page_in_last_batch,
+                                           'prev_button_page':prev_button_page,
+                                           'next_button_page':next_button_page
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}

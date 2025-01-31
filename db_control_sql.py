@@ -225,7 +225,10 @@ class db_control_sql:
         WHERE 1=1
             {% if category_idx %}  
                AND category_idx = {{category_idx}}                                     
-            {% endif %}                                           
+            {% endif %} 
+            {% if category_idx == 0 %}  
+               AND category_idx = {{category_idx}}                                     
+            {% endif %}                                                                                   
         """)
 
         self.SQL_UPDATE_CONTENT_VIEW_COUNT = jinja2.Template("""

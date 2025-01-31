@@ -96,7 +96,6 @@ class DBController(db_control_sql):
             
     def get_content_count(self,category_idx:str)->int:
         SQL = self.SQL_GET_CONTENT_COUNT.render(**{"category_idx":category_idx})
-        print('get content_count sql', SQL)
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.cursor()
             for i in cursor.execute(SQL):
