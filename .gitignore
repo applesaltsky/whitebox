@@ -5,3 +5,4 @@ __pycache__
 *.pickle
 *.pem
 *.db
+whitebox_github_pat.txt

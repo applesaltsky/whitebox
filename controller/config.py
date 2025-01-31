@@ -10,8 +10,8 @@ def is_windows():
     return platform.system() == "Windows"
 
 class Config:
-    def __init__(self):
-        self.PATH_APP_PY =  Path(__file__)
+    def __init__(self,PATH_APP_PY):
+        self.PATH_APP_PY =  PATH_APP_PY
         self.PATH_PROJECT = self.PATH_APP_PY.parent
 
         self.PATH_TEMPLATES = Path(self.PATH_PROJECT,'templates')
@@ -23,10 +23,12 @@ class Config:
         self.PATH_DB = Path(self.PATH_PROJECT,'databases','main.db')
         self.PATH_DB_TMP = Path(self.PATH_PROJECT,'databases','tmp.db')
 
-        self.PATH_ENV = Path(self.PATH_PROJECT,'.env')
+        self.PATH_SECRET = Path(self.PATH_PROJECT,'secret')
+
+        self.PATH_ENV = Path(self.PATH_SECRET,'.env')
         dotenv.load_dotenv(str(self.PATH_ENV))
 
-        self.PATH_BCRYPT_SALT = Path(self.PATH_PROJECT,'salt.pickle')
+        self.PATH_BCRYPT_SALT = Path(self.PATH_SECRET,'salt.pickle')
 
         folders = [
                     self.PATH_DB.parent, 
@@ -34,7 +36,8 @@ class Config:
                     self.PATH_STATIC,
                     self.PATH_JAVASCRIPT,
                     self.PATH_CSS,
-                    self.PATH_IMAGE
+                    self.PATH_IMAGE,
+                    self.PATH_SECRET
                    ]
          
         for folder in folders:

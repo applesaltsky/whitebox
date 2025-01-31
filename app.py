@@ -1,10 +1,10 @@
 #import internal class
-from config import Config
-from db_control import DBController
-from session_control import SessionController
-from checker import Checker
-from fs_control import FSController
-from encrypter import Encrypter
+from controller.config import Config
+from controller.db_control import DBController
+from controller.session_control import SessionController
+from controller.checker import Checker
+from controller.fs_control import FSController
+from controller.encrypter import Encrypter
 
 #import external package
 from fastapi import FastAPI, Response, Request, Form, Query, Cookie, UploadFile
@@ -22,7 +22,8 @@ import time, re, math
 
 
 #set config and utility func
-config = Config()
+PATH_APP_PY = Path(__file__)
+config = Config(PATH_APP_PY)
 checker = Checker()
 
 #init session control
@@ -234,7 +235,7 @@ def home_handler(session_id:str = Cookie(default='-'),
     category_idx = db_controller.get_category_idx_with_category(category)
     content_count = db_controller.get_content_count(category_idx=category_idx)
 
-    total_page_count = math.ceil(content_count/row_cnt)
+    total_page_count = max(math.ceil(content_count/row_cnt),1)
     page_batch_list = [i for i in batch(list(map(lambda item : item+1,range(total_page_count))),n=config.max_page_count)]
     
     page_list = []
@@ -244,7 +245,7 @@ def home_handler(session_id:str = Cookie(default='-'),
             page_list = page_batch
             break
         page_batch_idx += 1
-
+    
     is_page_in_first_batch = page in page_batch_list[0]
     prev_button_page = -1
     if not is_page_in_first_batch:

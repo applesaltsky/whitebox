@@ -1,4 +1,4 @@
-from db_control_sql import db_control_sql
+from .db_control_sql import db_control_sql
 
 from pathlib import Path
 from datetime import datetime, timedelta
