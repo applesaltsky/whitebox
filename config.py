@@ -61,8 +61,8 @@ class Config:
         self.cycle_delete_old_log = 1024
 
         #page config on home.html
-        self.max_page_count = 2 
-        self.row_cnt_list = [2,5,10,20,30]
+        self.max_page_count = 5 
+        self.row_cnt_list = [5,10,20,30]
 
         #page config admin panel
         self.limit_admin_panel_view = 1000
