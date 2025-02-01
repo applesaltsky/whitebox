@@ -271,7 +271,9 @@ def home_handler(session_id:str = Cookie(default='-'),
                                            'is_page_in_first_batch':is_page_in_first_batch,
                                            'is_page_in_last_batch':is_page_in_last_batch,
                                            'prev_button_page':prev_button_page,
-                                           'next_button_page':next_button_page
+                                           'next_button_page':next_button_page,
+                                           'ADMIN_ID':config.admin_id,
+                                           'ADMIN_EMAIL':config.admin_email
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
