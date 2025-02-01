@@ -49,9 +49,6 @@ class Config:
         self.admin_pw = os.getenv("ADMIN_PW")
         self.admin_email = os.getenv("ADMIN_EMAIL")
         
-
-
-
         self.PATH_BCRYPT_SALT = Path(self.PATH_SECRET,'salt.pickle')
 
         folders = [
@@ -96,7 +93,7 @@ class Config:
         self.log_timekey_format = "%Y%m%d%H%M%S"
         self.log_expiration_date = 90
 
-        self.default_category_list = ['DataScience','Backend','ComputerScience']
+        self.default_category_list = ['DataScience','Backend','ComputerScience','etc']
 
 
 
