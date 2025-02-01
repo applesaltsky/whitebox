@@ -37,14 +37,17 @@ class Config:
                     break
                 else:
                     print('password confirm failed, please check your input.')
+            e = input("admin email address : ")
         
             with open(self.PATH_ENV, 'wt') as f:
                 f.writelines(f"ADMIN_ID={i}\n")
                 f.writelines(f"ADMIN_PW={p}\n")
+                f.writelines(f"ADMIN_EMAIL={p}\n")
 
         dotenv.load_dotenv(str(self.PATH_ENV))
         self.admin_id = os.getenv("ADMIN_ID")
         self.admin_pw = os.getenv("ADMIN_PW")
+        self.admin_pw = os.getenv("ADMIN_EMAIL")
         
 
 
