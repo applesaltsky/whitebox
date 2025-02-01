@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{content['title']}}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="/css/global.css" type="text/css"></link>
     <link rel="stylesheet" href="/css/global_content_view.css" type="text/css"></link>
+
     <style>
         #mainframe {
             width : 800px;
@@ -73,8 +79,6 @@
             <h1 id='content_view_title'> {{content['title']}} </h1>
             <div id='content_view_info'>  
                 <span> user_id : {{content['user_id']}} </span> 
-                <span> view_count : {{content['view_count']}} </span>
-                <span> created_time : {{content['created_time']}} </span> 
                 <span> updated_time : {{content['updated_time']}} </span> 
             </div>
             <div id='content_view_content'>   
@@ -146,7 +150,7 @@
 {{content['content']}}
         
         `;
-        console.log(markdownInput);
+        //console.log(markdownInput);
         const markdownOutput = document.getElementById('content_view_content');
         markdownOutput.innerHTML = 
             marked.parse(markdownInput);

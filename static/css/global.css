@@ -56,3 +56,15 @@ body {
 .upload_button:hover {
     background-color: #e5e5e5;
 }
+
+body {
+    font-family: "Noto Sans", serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+
+:lang(ko) {
+    font-family: "Noto Sans KR", serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
