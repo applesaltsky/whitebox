@@ -844,6 +844,15 @@ def serve_image(file_name:str):
     headers = {'Content-Type':'image/webp'}
     return Response(content=body, status_code=status_code, headers=headers)
 
+@app.get('/favicon.ico')
+def serve_favicon():
+    file_path = Path(config.PATH_FAVICON_ICO)
+    with open(file_path,'rb') as f: 
+        body = f.read()
+    status_code = 200  
+    headers = {'Content-Type':'image/x-icon'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
 @app.get('/admin/panel')
 def serve_admin_panel(session_id:str|None = Cookie(default=None)):
     if not checker.is_login_client(session_id):

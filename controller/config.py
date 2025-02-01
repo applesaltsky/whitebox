@@ -66,6 +66,7 @@ class Config:
                 os.makedirs(folder)
 
         self.global_title = "whitebox"
+        self.PATH_FAVICON_ICO = Path(self.PATH_PROJECT,'favicon.ico')
 
         self.time_server_started = datetime.now()
         self.time_format = "%Y-%m-%d %H:%M:%S"
