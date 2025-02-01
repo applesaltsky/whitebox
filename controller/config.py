@@ -26,7 +26,28 @@ class Config:
         self.PATH_SECRET = Path(self.PATH_PROJECT,'secret')
 
         self.PATH_ENV = Path(self.PATH_SECRET,'.env')
+        
+        if not os.path.exists(self.PATH_ENV):
+            print("Initializing server.")
+            i = input("admin id : ")
+            while True:
+                p = input("admin password : ")
+                pc = input("admin password confirm : ")
+                if p == pc:
+                    break
+                else:
+                    print('password confirm failed, please check your input.')
+        
+            with open(self.PATH_ENV, 'wt') as f:
+                f.writelines(f"ADMIN_ID={i}\n")
+                f.writelines(f"ADMIN_PW={p}\n")
+
         dotenv.load_dotenv(str(self.PATH_ENV))
+        self.admin_id = os.getenv("ADMIN_ID")
+        self.admin_pw = os.getenv("ADMIN_PW")
+        
+
+
 
         self.PATH_BCRYPT_SALT = Path(self.PATH_SECRET,'salt.pickle')
 
@@ -74,8 +95,7 @@ class Config:
 
         self.default_category_list = ['DataScience','Backend','ComputerScience']
 
-        self.admin_id = os.getenv("ADMIN_ID")
-        self.admin_pw = os.getenv("ADMIN_PW")
+
 
         self.reload = False
         if is_windows():
