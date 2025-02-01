@@ -416,7 +416,7 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
         body = f.read()
 
     content = db_controller.get_content(content_idx)
-    content['content'] = content['content'].replace("`","\`")
+    content['content'] = content['content'].replace(r"`",r"\`")
     user_info = session_controller.get_session(session_id)
     comment_list = db_controller.get_comment_with_content_idx(content_idx)
 
