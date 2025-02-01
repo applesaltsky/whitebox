@@ -17,6 +17,8 @@
         #mainframe {
             width : 800px;
         }
+
+        
         table {
             margin-top : 10px;
         }
@@ -52,14 +54,31 @@
         #created_by {
             text-align:right;
         }
+
+        #search_pattern_input input{
+            width : 100px;
+        }
+
+        @media(max-width : 400px) {
+            #mainframe {
+                width : 350px;
+            }
+        }
+
+        @media(max-width : 768px) {
+            #mainframe {
+                width : 400px;
+            }
+        }
+
     </style>
 </head>
 <body>
     <div id='mainframe'>
         <div id='top_line'>
-            <div id='top_line_empty'>
+            <div class="hide_in_mobile_400" id='top_line_empty'>
                 {% if user_info %}
-                    <h5> hello, {{user_info['user_id']}}! </h5>
+                    <h5 > hello, {{user_info['user_id']}}! </h5>
                 {% endif %}
             </div>
             <div id='top_line_content'>
@@ -124,23 +143,27 @@
             <table>
                 <thead>
                     <tr>
-                        <th>content_idx</th>
-                        <th>user_id</th>
+                        <th class="hide_in_mobile_400" style="width:50px">idx</th>
+                        {% if 'user' in write_content_previlage %}
+                        <th class="hide_in_mobile_768">user_id</th>
+                        {% endif %}
                         <th>category</th>
-                        <th>title</th>
-                        <th>view_count</th>
-                        <th>created_time</th>
+                        <th style="width:200px">title</th>
+                        <th class="hide_in_mobile_768">view_count</th>
+                        <th class="hide_in_mobile_768">created_time</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in content_list %}
                     <tr>
-                        <td>{{row['content_idx']}}</td>
-                        <td>{{row['user_id']}}</td>
+                        <td class="hide_in_mobile_400">{{row['content_idx']}}</td>
+                        {% if 'user' in write_content_previlage %}
+                        <td class="hide_in_mobile_768">{{row['user_id']}}</td>
+                        {% endif %}
                         <td>{{row['category']}}</td>
                         <td> <a href="/content/{{row['content_idx']}}"> {{row['title']}} </a> </td>
-                        <td>{{row['view_count']}} </td>
-                        <td>{{row['created_time']}} </td>
+                        <td class="hide_in_mobile_768">{{row['view_count']}} </td>
+                        <td class="hide_in_mobile_768">{{row['created_time']}} </td>
                     </tr>
                     {% endfor %}
                 </tbody>
