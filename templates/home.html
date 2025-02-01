@@ -63,11 +63,17 @@
             #mainframe {
                 width : 350px;
             }
+            #view {
+                font-size : 13px;
+            }
         }
 
         @media(max-width : 768px) {
             #mainframe {
-                width : 400px;
+                width : 380px;
+            }
+            #view {
+                font-size : 13px;
             }
         }
 
@@ -135,8 +141,8 @@
                     <a href="/">Recent</a>
                 </div>
                 {% for cate in category_list %}
-                <div>
-                    <a href="/?category={{cate['category']}}"> {{cate['category']}}</a>
+                <div id="category_list_container">
+                    <a href="/?category={{cate['category']}}">{{cate['category']}}</a>
                 </div>
                 {% endfor %}
             </div>
