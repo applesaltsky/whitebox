@@ -916,4 +916,4 @@ def serve_admin_panel(session_id:str|None = Cookie(default=None),
 #run fastapi application
 if __name__ == "__main__":
     print(f"server started : {config.time_server_started}")
-    uvicorn.run("__main__:app",port=config.PORT,reload=config.reload)
+    uvicorn.run("__main__:app",host=config.HOST, port=config.PORT,reload=config.reload)

@@ -80,6 +80,7 @@ class Config:
         self.reload = False
         if is_windows():
             self.reload = True
+        self.HOST = '0.0.0.0'
         self.PORT = 8080
          
 
