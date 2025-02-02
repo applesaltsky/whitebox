@@ -19,7 +19,7 @@ All configuration settings for this app are located in controller/config.py.
 You can change some port, ip, category setting and etc.
 When you login with admin previlage, you can access to admin panel for handling sqlite database with sql directly. All control, create, read, update, delete are allowed in that panel.
 
-If you want to add one category, accecss admin panel, and run this sql.
+If you want to add one category, access admin panel, and run this sql.
 
 ```
 INSERT CATEGORY_TABLE (
