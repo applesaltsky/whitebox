@@ -32,4 +32,14 @@ INSERT CATEGORY_TABLE (
 ```
 
 Then, one category will be created.
+
+If you want to get some log for your site, run this sql.
+
+```
+SELECT *
+FROM LOGGING_TABLE
+ORDER BY TIMEKEY DESC
+LIMIT 100
+```
+
 (All information for sqlite db are located in contoller/db_control_sql.py, and controller/db_control.py.)
