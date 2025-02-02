@@ -35,8 +35,10 @@
 <body>
     <div id='mainframe'>
         <div id='top_line'>
-            <div id='top_line_empty'>
-                <h5> hello, {{user_info['user_id']}}! </h5>
+            <div class="hide_in_mobile_400 hide_in_mobile_768" id='top_line_empty'>
+                {% if user_info %}
+                    <h5> hello, {{user_info['user_id']}}! </h5>
+                {% endif %}
             </div>
             <div id='top_line_content'>
                 <form action="/logout" method="post">
@@ -47,7 +49,7 @@
                 {% if user_info['previlage'] == 'admin' %}
                 <form action="/admin/panel" method="get">
                     <div>
-                        <button type="submit">view user table</button>
+                        <button type="submit">go admin panel</button>
                     </div>
                 </form>
                 {% endif %}
