@@ -30,6 +30,23 @@
             margin-right:10px;
         }
 
+        #view_table_title {
+            width:300px;
+        }
+
+        @media(max-width : 400px) {
+            #view_table_title {
+                width:200px;
+            }
+        }
+
+        @media(max-width : 768px) {
+            #view_table_title {
+                width:200px;
+            }
+        }
+
+
         #view_select {
             margin-top:10px; 
             display:flex;
@@ -154,7 +171,7 @@
                         <th class="hide_in_mobile_768">user_id</th>
                         {% endif %}
                         <th>category</th>
-                        <th style="width:200px">title</th>
+                        <th id="view_table_title">title</th>
                         <th class="hide_in_mobile_768">view_count</th>
                         <th class="hide_in_mobile_768">created_time</th>
                     </tr>
