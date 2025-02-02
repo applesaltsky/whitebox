@@ -35,7 +35,7 @@ body {
 
 @media(max-width : 400px) {
     #top_line #top_line_content {
-        width : 300px;
+        width : 100%;
         display : flex;
         justify-content: flex-end;
     }
@@ -43,7 +43,7 @@ body {
 
 @media(max-width : 768px) {
     #top_line #top_line_content {
-        width : 300px;
+        width : 100%;
         display : flex;
         justify-content: flex-end;
     }
