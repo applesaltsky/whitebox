@@ -26,6 +26,7 @@
                 width:330px;
                 height:190px;
             }
+
         }
 
         @media(max-width : 768px) {
@@ -36,7 +37,7 @@
             img {
                 width:350px;
                 height:200px;
-            }
+            }         
         }
     </style>
 </head>
@@ -98,7 +99,9 @@
             </div>
         </div>
         <div id='view'>
-            <h1 id='content_view_title'> {{content['title']}} </h1>
+            <div id='content_view_title_container'>
+                <h1 id='content_view_title'> {{content['title']}} </h1>
+            </div>
             <div id='content_view_info'>  
                 <span> Author : {{content['user_id']}} </span> 
                 <br>

@@ -25,8 +25,22 @@ class Config:
 
         self.PATH_SECRET = Path(self.PATH_PROJECT,'secret')
 
+        folders = [
+                    self.PATH_DB.parent, 
+                    self.PATH_TEMPLATES, 
+                    self.PATH_STATIC,
+                    self.PATH_JAVASCRIPT,
+                    self.PATH_CSS,
+                    self.PATH_IMAGE,
+                    self.PATH_SECRET
+                   ]
+         
+        for folder in folders:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
         self.PATH_ENV = Path(self.PATH_SECRET,'.env')
-        
+    
         if not os.path.exists(self.PATH_ENV):
             print("Initializing server.")
             i = input("admin id : ")
@@ -51,19 +65,7 @@ class Config:
         
         self.PATH_BCRYPT_SALT = Path(self.PATH_SECRET,'salt.pickle')
 
-        folders = [
-                    self.PATH_DB.parent, 
-                    self.PATH_TEMPLATES, 
-                    self.PATH_STATIC,
-                    self.PATH_JAVASCRIPT,
-                    self.PATH_CSS,
-                    self.PATH_IMAGE,
-                    self.PATH_SECRET
-                   ]
-         
-        for folder in folders:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
+        
 
         self.global_title = "whitebox"
         self.PATH_FAVICON_ICO = Path(self.PATH_PROJECT,'favicon.ico')

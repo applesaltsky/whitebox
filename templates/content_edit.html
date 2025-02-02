@@ -139,7 +139,9 @@
                 </form>
             </div>
             <div id="viewframe">
-                <h1 id='content_view_title'> EMPTY </h1>
+                <div id='content_view_title_container'>
+                    <h1 id='content_view_title'> {{content['title']}} </h1>
+                </div>
                 <div id='content_view_info'>  
                     <span> user_id : {{user_info['user_id']}} </span> 
                     <span> updated_time : {{updated_time}} </span>
