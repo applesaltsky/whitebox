@@ -33,6 +33,22 @@ body {
     justify-content: flex-end;
 }
 
+@media(max-width : 400px) {
+    #top_line #top_line_content {
+        width : 300px;
+        display : flex;
+        justify-content: flex-end;
+    }
+}
+
+@media(max-width : 768px) {
+    #top_line #top_line_content {
+        width : 300px;
+        display : flex;
+        justify-content: flex-end;
+    }
+}
+
 #top_line #top_line_content div {
     margin-left : 5px;
 }
@@ -72,12 +88,12 @@ body {
 
 @media(max-width : 400px) {
     .hide_in_mobile_400 {
-        display: none; /* 모바일에서 네비게이션 바 숨김 */
+        display: none; 
     }
 }
 
 @media(max-width : 768px) {
     .hide_in_mobile_768 {
-        display: none; /* 모바일에서 네비게이션 바 숨김 */
+        display: none; 
     }
 }
