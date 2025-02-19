@@ -135,7 +135,31 @@ class DBController(db_control_sql):
                     break
             return rst
         
-                   
+    def get_all_content_list(self):      
+        '''
+        page 1 / row cnt 5  -> get 1,2,3,4,5
+        page 3 / row cnt 10 -> get 21~30
+        '''
+        end_cnt = 10000
+        SQL = self.SQL_GET_CONTENT_LIST.render(**{'limit':end_cnt,'category':None,'search_pattern':None})
+        with sqlite3.connect(str(self.db_path)) as conn:
+            cursor = conn.cursor()
+            rst = []
+            for content_idx,user_idx,title,category,created_time,updated_time,content,view_count,user_id in cursor.execute(SQL):
+                rst.append({
+                                'content_idx':content_idx,
+                                'user_idx':user_idx,
+                                'title':title,
+                                'category':category,
+                                'created_time':created_time,
+                                'updated_time':updated_time,
+                                'content':content,
+                                'view_count':view_count,
+                                'user_id':user_id
+                                })      
+            return rst
+
+
     def get_content(self,content_idx:int)->dict:
         """
         return {

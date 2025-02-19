@@ -924,6 +924,25 @@ def serve_admin_panel(session_id:str|None = Cookie(default=None),
     return Response(content=body, status_code=status_code, headers=headers)
 
 
+@app.get('/sitemap.xml')
+def serve_sitemap():
+    content_list = db_controller.get_all_content_list()
+    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z')
+    body = jinja2.Template(r"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    {% for idx in content_list %}
+  <url>
+	<loc>https://whitebox.social/content/{{idx['content_idx']}}</loc>
+	<lastmod>{{timestamp}}</lastmod>
+	<changefreq>weekly</changefreq>
+	<priority>0.8</priority>
+  </url>
+    {% endfor %}
+</urlset>""").render({'timestamp':timestamp, 'content_list':content_list})
+    status_code = 200
+    headers = {'Content-Type':'text/xml;charset=utf-8'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
 #run fastapi application
 if __name__ == "__main__":
     print(f"server started : {config.time_server_started}")
