@@ -422,6 +422,7 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     content['content'] = content['content'].replace(r"`",r"\`")
     user_info = session_controller.get_session(session_id)
     comment_list = db_controller.get_comment_with_content_idx(content_idx)
+    first_image = db_controller.get_image_with_content_idx(content_idx)[0]
 
     comment_list_tmp = []
     for comment in comment_list:
@@ -435,7 +436,8 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
                                             'content':content,
                                             'user_info':user_info,
                                             'comment_list':comment_list,
-                                            'global_title':config.global_title
+                                            'global_title':config.global_title,
+                                            'first_image':first_image
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}
@@ -942,6 +944,15 @@ def serve_sitemap():
 </urlset>""").render({'timestamp':timestamp, 'content_list':content_list})
     status_code = 200
     headers = {'Content-Type':'text/xml;charset=utf-8'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
+@app.get('/thumbnail')
+def serve_thumbnail():
+    file_path = Path(config.PATH_THUMBNAIL)
+    with open(file_path,'rb') as f: 
+        body = f.read()
+    status_code = 200
+    headers = {'Content-Type':'image/png'}
     return Response(content=body, status_code=status_code, headers=headers)
 
 #run fastapi application
