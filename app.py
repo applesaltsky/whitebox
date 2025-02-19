@@ -273,7 +273,8 @@ def home_handler(session_id:str = Cookie(default='-'),
                                            'prev_button_page':prev_button_page,
                                            'next_button_page':next_button_page,
                                            'ADMIN_ID':config.admin_id,
-                                           'ADMIN_EMAIL':config.admin_email
+                                           'ADMIN_EMAIL':config.admin_email,
+                                           'global_description':config.global_description
                                            })
     status_code = 200
     headers = {'Content-Type':'text/html;charset=utf-8'}

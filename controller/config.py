@@ -105,5 +105,7 @@ class Config:
             self.reload = True
         self.HOST = '0.0.0.0'
         self.PORT = 8080
+
+        self.global_description = '관심 분야는 DataScience, Backend, ComputerScience 입니다.'
          
 
