@@ -946,6 +946,14 @@ def serve_sitemap():
     headers = {'Content-Type':'text/xml;charset=utf-8'}
     return Response(content=body, status_code=status_code, headers=headers)
 
+@app.get('/robots.txt')
+def serve_robots():
+    with open(config.PATH_ROBOT,'rt',encoding='utf-8') as f:
+        body = f.read()
+    status_code = 200
+    headers = {'Content-Type':'text/plain;charset=utf-8'}
+    return Response(content=body, status_code=status_code, headers=headers)
+
 @app.get('/thumbnail')
 def serve_thumbnail():
     file_path = Path(config.PATH_THUMBNAIL)

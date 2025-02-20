@@ -66,6 +66,7 @@ class Config:
         self.PATH_BCRYPT_SALT = Path(self.PATH_SECRET,'salt.pickle')
 
         self.PATH_THUMBNAIL = Path(self.PATH_PROJECT,'thumbnail.png')
+        self.PATH_ROBOT = Path(self.PATH_PROJECT,'robots.txt')
 
         self.global_title = "whitebox"
         self.PATH_FAVICON_ICO = Path(self.PATH_PROJECT,'favicon.ico')
