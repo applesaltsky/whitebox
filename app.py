@@ -930,7 +930,7 @@ def serve_admin_panel(session_id:str|None = Cookie(default=None),
 @app.get('/sitemap.xml')
 def serve_sitemap():
     content_list = db_controller.get_all_content_list()
-    timestamp = (datetime.now()-timedelta(days=2)).strftime('%Y-%m-%dT%H:%M:%S%z')
+    timestamp = (datetime.now()-timedelta(days=2)).strftime('%Y-%m-%d')
     body = jinja2.Template(r"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     {% for idx in content_list %}
