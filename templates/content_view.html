@@ -8,7 +8,9 @@
     <meta property="og:type" content="website"> 
     <meta property="og:title" content="{{content['title']}}">
     <meta property="og:description" content="{{content['title']}}">
-    <meta property="og:image" content="/image/{{first_image}}">
+    {% if first_image %}
+        <meta property="og:image" content="/image/{{first_image}}">
+    {% endif %}
     <meta property="og:url" content="/content/{{content['content_idx']}}">
 
     <title>{{content['title']}}</title>

@@ -422,7 +422,12 @@ def serve_content(content_idx:int,session_id:str = Cookie(default='-')):
     content['content'] = content['content'].replace(r"`",r"\`")
     user_info = session_controller.get_session(session_id)
     comment_list = db_controller.get_comment_with_content_idx(content_idx)
-    first_image = db_controller.get_image_with_content_idx(content_idx)[0]
+
+    image_list = db_controller.get_image_with_content_idx(content_idx)
+    if len(image_list) >= 1:
+        first_image = image_list[0]
+    else:
+        first_image = None
 
     comment_list_tmp = []
     for comment in comment_list:
