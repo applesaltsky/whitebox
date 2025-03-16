@@ -152,6 +152,7 @@
         </div>
     </div>
     <link rel="stylesheet" href="/css/highlights.default.min.css">
+    
     <script src="/js/marked.umd.js"></script>
     <script src="/js/marked-highlight.index.umd.js"></script>
     <script src="/js/highlight.min.js"></script>
@@ -161,7 +162,7 @@
     <script src="/js/highlight.go.min.js"></script>
     <script src="/js/highlight.java.min.js"></script>
     <script src="/js/highlight.javascript.min.js"></script>
-    <script src="/js/highlight.rust.min.js"></script>
+    <script src="/js/highlight.rust.min.js"></script>  
     <script>
         const { Marked } = globalThis.marked;
         const { markedHighlight } = globalThis.markedHighlight;
@@ -191,5 +192,6 @@
         markdownOutput.innerHTML = 
             marked.parse(markdownInput);
     </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
