@@ -189,9 +189,16 @@
         `;
         //console.log(markdownInput);
         const markdownOutput = document.getElementById('content_view_content');
-        markdownOutput.innerHTML = 
-            marked.parse(markdownInput);
+        markdownOutput.innerHTML = marked.parse(markdownInput);
+    </script>  
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$$', '$$']]
+          }
+        };
     </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+    </script>  
 </body>
 </html>

@@ -233,7 +233,20 @@
 
 
     </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$$', '$$']]
+          }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+    </script> 
+    <script>
+        document.getElementById("content_edit_main_textarea").addEventListener('input',()=>{
+            MathJax.typeset();
+        });
+    </script>
 
 </body>
 </html>
