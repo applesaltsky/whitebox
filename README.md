@@ -3,7 +3,7 @@
 Whitebox is a simple Python project for creating personal blogs. It is built on Python FastAPI and controls the database using SQLite. The code for downloading and running it is as follows
 
 ```
-git clone https://github.com/applesaltsky/whitebox
+git clone https://github.com/applesaltsky/whitebox.git
 cd whitebox
 pip install -r requirements.txt
 python app.py
